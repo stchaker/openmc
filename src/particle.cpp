@@ -866,25 +866,22 @@ SourceSite Particle::to_source_site()
 void Particle::update_neutron_xs(
   int i_nuclide, int i_grid, int i_sab, double sab_frac, double ncrystal_xs)
 {
-  // Get microscopic cross section cache
-  auto& micro = this->neutron_xs(i_nuclide);
+  SourceSite site;
+  int i_surface = std::abs(this->surface());
+  const auto& surf {model::surfaces[i_surface - 1].get()};
 
-  // If the cache doesn't match, recalculate micro xs
-  if (this->E() != micro.last_E || this->sqrtkT() != micro.last_sqrtkT ||
-      i_sab != micro.index_sab || sab_frac != micro.sab_frac) {
-    data::nuclides[i_nuclide]->calculate_xs(i_sab, i_grid, sab_frac, *this);
-
-    // If NCrystal is being used, update micro cross section cache
-    if (ncrystal_xs >= 0.0) {
-      data::nuclides[i_nuclide]->calculate_elastic_xs(*this);
-      ncrystal_update_micro(ncrystal_xs, micro);
-    }
-  }
+  site.r = r();
+  site.u = u();
+  site.E = E();
+  site.time = time();
+  site.wgt = wgt();
+  site.delayed_group = delayed_group();
+  site.surf_id = surf->id_;
+  site.particle = type();
+  site.parent_id = id();
+  site.progeny_id = n_progeny();
+  return site;
 }
-
-//==============================================================================
-// Non-method functions
-//==============================================================================
 
 std::string particle_type_to_str(ParticleType type)
 {
