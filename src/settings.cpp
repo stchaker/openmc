@@ -121,6 +121,7 @@ int trigger_batch_interval {1};
 int verbosity {7};
 double weight_cutoff {0.25};
 double weight_survive {1.0};
+int64_t num_neutrons_time_slice {0};
 
 } // namespace settings
 
@@ -923,6 +924,11 @@ void read_settings_xml(pugi::xml_node root)
 
   if (check_for_node(root, "max_tracks")) {
     settings::max_tracks = std::stoi(get_node_value(root, "max_tracks"));
+  }
+
+  if (check_for_node(root, "num_neutrons_time_slice")) {
+    settings::num_neutrons_time_slice =
+      std::stoll(get_node_value(root, "num_neutrons_time_slice"));
   }
 }
 

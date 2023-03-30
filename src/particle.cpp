@@ -29,6 +29,7 @@
 #include "openmc/tallies/tally.h"
 #include "openmc/tallies/tally_scoring.h"
 #include "openmc/track_output.h"
+#include "openmc/transient.h"
 
 #ifdef DAGMC
 #include "DagMC.hpp"
@@ -196,12 +197,46 @@ void Particle::event_advance()
 
   // Select smaller of the two distances
   double distance = std::min(boundary().distance, collision_distance());
+  const double dt = distance / this->speed();
+  this->time() += dt;
+
+  if (type() == ParticleType::neutron) {
+    if (simulation::current_batch <= settings::n_inactive) {
+// Thread-safe check if this is the biggest flight time yet:
+#pragma omp atomic read
+      const double max_track_segment_time = simulation::max_track_segment_time;
+
+      // If so, save the new max flight time
+      if (max_track_segment_time < dt) {
+#pragma omp atomic write
+        simulation::max_track_segment_time = dt;
+      }
+    } else {
+      // Sample whether this track segment gets saved as a time slice source
+      // site if we're in the active cycles, which are assumed to be
+      // representative of the steady state condition
+      const double save_probability = dt / simulation::max_track_segment_time;
+
+      if (simulation::time_slice_bank.size() <
+          settings::num_neutrons_time_slice) {
+        if (prn(current_seed()) < save_probability) {
+          SourceSite site = this->to_source_site();
+
+          // Advance to a random position along the track
+          const double xi = prn(current_seed());
+          site.r += xi * distance * this->u();
+          site.time += xi * dt;
+
+          simulation::time_slice_bank.thread_safe_append(site);
+        }
+      }
+    }
+  }
 
   // Advance particle in space and time
   for (int j = 0; j < n_coord(); ++j) {
     coord(j).r += distance * coord(j).u;
   }
-  this->time() += distance / this->speed();
 
   // Score track-length tallies
   if (!model::active_tracklength_tallies.empty()) {
@@ -401,18 +436,8 @@ void Particle::cross_surface()
   }
 
   if (surf->surf_source_ && simulation::current_batch == settings::n_batches) {
-    SourceSite site;
-    site.r = r();
-    site.u = u();
-    site.E = E();
-    site.time = time();
-    site.wgt = wgt();
-    site.delayed_group = delayed_group();
-    site.surf_id = surf->id_;
-    site.particle = type();
-    site.parent_id = id();
-    site.progeny_id = n_progeny();
-    int64_t idx = simulation::surf_source_bank.thread_safe_append(site);
+    int64_t idx =
+      simulation::surf_source_bank.thread_safe_append(this->to_source_site());
   }
 
 // if we're crossing a CSG surface, make sure the DAG history is reset
@@ -707,6 +732,25 @@ void Particle::write_restart() const
     // Close file
     file_close(file_id);
   } // #pragma omp critical
+}
+
+SourceSite Particle::to_source_site()
+{
+  SourceSite site;
+  int i_surface = std::abs(this->surface());
+  const auto& surf {model::surfaces[i_surface - 1].get()};
+
+  site.r = r();
+  site.u = u();
+  site.E = E();
+  site.time = time();
+  site.wgt = wgt();
+  site.delayed_group = delayed_group();
+  site.surf_id = surf->id_;
+  site.particle = type();
+  site.parent_id = id();
+  site.progeny_id = n_progeny();
+  return site;
 }
 
 std::string particle_type_to_str(ParticleType type)

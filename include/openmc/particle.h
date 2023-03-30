@@ -106,6 +106,9 @@ public:
 
   //! create a particle restart HDF5 file
   void write_restart() const;
+
+  //! create a source site from the current particle state
+  SourceSite to_source_site();
 };
 
 //============================================================================

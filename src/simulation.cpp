@@ -24,6 +24,7 @@
 #include "openmc/tallies/trigger.h"
 #include "openmc/timer.h"
 #include "openmc/track_output.h"
+#include "openmc/transient.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -309,6 +310,10 @@ void allocate_banks()
     // Allocate surface source bank
     simulation::surf_source_bank.reserve(settings::max_surface_particles);
   }
+
+  if (settings::num_neutrons_time_slice > 0) {
+    simulation::time_slice_bank.reserve(settings::num_neutrons_time_slice);
+  }
 }
 
 void initialize_batch()
@@ -338,7 +343,19 @@ void initialize_batch()
   if (first_inactive) {
     simulation::time_inactive.start();
   } else if (first_active) {
-    simulation::time_inactive.stop();
+
+    // Parallel reduce the max particle segment flight time
+#ifdef OPENMC_MPI
+    printf("reducing max flight times...\n");
+    double reduced_max_flight_time;
+    // Combine values across all processors
+    MPI_Allreduce(&simulation::max_track_segment_time, &reduced_max_flight_time,
+      1, MPI_DOUBLE, MPI_MAX, mpi::intracomm);
+    printf("done!\n")
+
+#endif
+
+      simulation::time_inactive.stop();
     simulation::time_active.start();
     for (auto& t : model::tallies) {
       t->active_ = true;
@@ -708,6 +725,7 @@ void free_memory_simulation()
 {
   simulation::k_generation.clear();
   simulation::entropy.clear();
+  simulation::time_slice_bank.clear();
 }
 
 void transport_history_based_single_particle(Particle& p)
