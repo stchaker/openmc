@@ -312,7 +312,12 @@ void allocate_banks()
   }
 
   if (settings::num_neutrons_time_slice > 0) {
-    simulation::time_slice_bank.reserve(settings::num_neutrons_time_slice);
+    if (mpi::n_procs > 1) {
+      simulation::time_slice_bank.reserve(
+        (settings::num_neutrons_time_slice / mpi::n_procs) * 2);
+    } else {
+      simulation::time_slice_bank.reserve(settings::num_neutrons_time_slice);
+    }
   }
 }
 
@@ -451,6 +456,25 @@ void finalize_batch()
       write_mcpl_source_point(filename.c_str(), surfbankspan, surf_work_index);
     } else {
       write_source_point(filename.c_str(), surfbankspan, surf_work_index);
+    }
+  }
+
+  // Write to source sites output for time slice
+  if (settings::num_neutrons_time_slice > 0 &&
+      !simulation::time_slice_bank_written) {
+    std::vector<int64_t> time_slice_population_parallel_scan =
+      mpi::calculate_parallel_index_vector(simulation::time_slice_bank.size());
+    if (time_slice_population_parallel_scan.back() >=
+        settings::num_neutrons_time_slice) {
+      // write out the time slice bank
+      if (mpi::rank == 0) {
+        fmt::print("  Writing time slice bank...");
+      }
+      gsl::span<SourceSite> bankspan(simulation::time_slice_bank.begin(),
+        simulation::time_slice_bank.size());
+      write_source_point(
+        "flight_source.h5", bankspan, time_slice_population_parallel_scan);
+      simulation::time_slice_bank_written = true;
     }
   }
 }

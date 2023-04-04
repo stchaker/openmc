@@ -24,6 +24,7 @@ extern SharedArray<SourceSite> time_slice_bank;
 // a small chance we encounter a probability greater than one, and in that case
 // we round down to one.
 extern double max_track_segment_time;
+extern bool time_slice_bank_written;
 
 } // namespace simulation
 
