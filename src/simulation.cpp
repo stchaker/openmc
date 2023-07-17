@@ -24,11 +24,8 @@
 #include "openmc/tallies/trigger.h"
 #include "openmc/timer.h"
 #include "openmc/track_output.h"
-<<<<<<< HEAD
 #include "openmc/transient.h"
-=======
 #include "openmc/weight_windows.h"
->>>>>>> @{-1}
 
 #ifdef _OPENMP
 #include <omp.h>
