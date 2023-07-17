@@ -114,10 +114,8 @@ public:
   //! create a particle restart HDF5 file
   void write_restart() const;
 
-<<<<<<< HEAD
   //! create a source site from the current particle state
   SourceSite to_source_site();
-=======
   //! Update microscopic cross section cache
   //
   //! \param[in] i_nuclide Index in data::nuclides
@@ -127,7 +125,6 @@ public:
   //! \param[in] ncrystal_xs Thermal scattering xs from NCrystal
   void update_neutron_xs(int i_nuclide, int i_grid = C_NONE, int i_sab = C_NONE,
     double sab_frac = 0.0, double ncrystal_xs = -1.0);
->>>>>>> @{-1}
 };
 
 //============================================================================
