@@ -503,11 +503,10 @@ void Particle::cross_surface()
     write_message(1, "    Crossing surface {}", surf->id_);
   }
 
-<<<<<<< HEAD
   if (surf->surf_source_ && simulation::current_batch == settings::n_batches) {
     int64_t idx =
       simulation::surf_source_bank.thread_safe_append(this->to_source_site());
-=======
+  }
   if (surf->surf_source_ && simulation::current_batch > settings::n_inactive &&
       !simulation::surf_source_bank.full()) {
     SourceSite site;
@@ -522,7 +521,6 @@ void Particle::cross_surface()
     site.parent_id = id();
     site.progeny_id = n_progeny();
     int64_t idx = simulation::surf_source_bank.thread_safe_append(site);
->>>>>>> @{-1}
   }
 
 // if we're crossing a CSG surface, make sure the DAG history is reset
