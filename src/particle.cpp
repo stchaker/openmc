@@ -813,7 +813,6 @@ void Particle::write_restart() const
   } // #pragma omp critical
 }
 
-<<<<<<< HEAD
 SourceSite Particle::to_source_site()
 {
   SourceSite site;
@@ -833,7 +832,6 @@ SourceSite Particle::to_source_site()
   return site;
 }
 
-=======
 void Particle::update_neutron_xs(
   int i_nuclide, int i_grid, int i_sab, double sab_frac, double ncrystal_xs)
 {
@@ -857,7 +855,6 @@ void Particle::update_neutron_xs(
 // Non-method functions
 //==============================================================================
 
->>>>>>> @{-1}
 std::string particle_type_to_str(ParticleType type)
 {
   switch (type) {
