@@ -931,11 +931,11 @@ void read_settings_xml(pugi::xml_node root)
     settings::max_tracks = std::stoi(get_node_value(root, "max_tracks"));
   }
 
-<<<<<<< HEAD
   if (check_for_node(root, "num_neutrons_time_slice")) {
     settings::num_neutrons_time_slice =
       std::stoll(get_node_value(root, "num_neutrons_time_slice"));
-=======
+  }
+  
   // Create weight window generator objects
   if (check_for_node(root, "weight_window_generators")) {
     auto wwgs_node = root.child("weight_window_generators");
@@ -952,7 +952,6 @@ void read_settings_xml(pugi::xml_node root)
         break;
       }
     }
->>>>>>> @{-1}
   }
 }
 
