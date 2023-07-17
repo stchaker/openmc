@@ -35,6 +35,9 @@ public:
 
   Particle() = default;
 
+  //==========================================================================
+  // Methods
+
   double speed() const;
 
   //! create a secondary particle
@@ -62,6 +65,10 @@ public:
   void event_collide();
   void event_revive_from_secondary();
   void event_death();
+
+  //! pulse-height recording
+  void pht_collision_energy();
+  void pht_secondary_particles();
 
   //! Cross a surface and handle boundary conditions
   void cross_surface();
@@ -107,8 +114,20 @@ public:
   //! create a particle restart HDF5 file
   void write_restart() const;
 
+<<<<<<< HEAD
   //! create a source site from the current particle state
   SourceSite to_source_site();
+=======
+  //! Update microscopic cross section cache
+  //
+  //! \param[in] i_nuclide Index in data::nuclides
+  //! \param[in] i_grid Index on log union grid
+  //! \param[in] i_sab Index in data::thermal_scatt
+  //! \param[in] sab_frac  S(a,b) table fraction
+  //! \param[in] ncrystal_xs Thermal scattering xs from NCrystal
+  void update_neutron_xs(int i_nuclide, int i_grid = C_NONE, int i_sab = C_NONE,
+    double sab_frac = 0.0, double ncrystal_xs = -1.0);
+>>>>>>> @{-1}
 };
 
 //============================================================================

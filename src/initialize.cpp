@@ -33,6 +33,7 @@
 #include "openmc/thermal.h"
 #include "openmc/timer.h"
 #include "openmc/vector.h"
+#include "openmc/weight_windows.h"
 
 #ifdef LIBMESH
 #include "libmesh/libmesh.h"
@@ -193,6 +194,7 @@ int parse_command_line(int argc, char* argv[])
         // Set path and flag for type of run
         if (filetype == "statepoint") {
           settings::path_statepoint = argv[i];
+          settings::path_statepoint_c = settings::path_statepoint.c_str();
           settings::restart_run = true;
         } else if (filetype == "particle restart") {
           settings::path_particle_restart = argv[i];
@@ -358,7 +360,7 @@ bool read_model_xml()
   for (const auto& input : other_inputs) {
     if (file_exists(settings::path_input + input)) {
       warning((fmt::format("Other XML file input(s) are present. These files "
-                           "will be ignored in favor of the {} file.",
+                           "may be ignored in favor of the {} file.",
         model_filename)));
       break;
     }
@@ -392,8 +394,18 @@ bool read_model_xml()
   // Initialize distribcell_filters
   prepare_distribcell();
 
-  if (check_for_node(root, "plots"))
+  if (check_for_node(root, "plots")) {
     read_plots_xml(root.child("plots"));
+  } else {
+    // When no <plots> element is present in the model.xml file, check for a
+    // regular plots.xml file
+    std::string filename = settings::path_input + "plots.xml";
+    if (file_exists(filename)) {
+      read_plots_xml();
+    }
+  }
+
+  finalize_variance_reduction();
 
   return true;
 }
@@ -418,6 +430,8 @@ void read_separate_xml_files()
   // Read the plots.xml regardless of plot mode in case plots are requested
   // via the API
   read_plots_xml();
+
+  finalize_variance_reduction();
 }
 
 void initial_output()

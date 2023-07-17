@@ -24,7 +24,11 @@
 #include "openmc/tallies/trigger.h"
 #include "openmc/timer.h"
 #include "openmc/track_output.h"
+<<<<<<< HEAD
 #include "openmc/transient.h"
+=======
+#include "openmc/weight_windows.h"
+>>>>>>> @{-1}
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -138,6 +142,11 @@ int openmc_simulation_init()
     }
   }
 
+  // load weight windows from file
+  if (!settings::weight_windows_file.empty()) {
+    openmc_weight_windows_import(settings::weight_windows_file.c_str());
+  }
+
   // Set flag indicating initialization is done
   simulation::initialized = true;
   return 0;
@@ -175,6 +184,12 @@ int openmc_simulation_finalize()
   // Write tally results to tallies.out
   if (settings::output_tallies && mpi::master)
     write_tallies();
+
+  // If weight window generators are present in this simulation,
+  // write a weight windows file
+  if (variance_reduction::weight_windows_generators.size() > 0) {
+    openmc_weight_windows_export();
+  }
 
   // Deactivate all tallies
   for (auto& t : model::tallies) {
@@ -378,6 +393,11 @@ void finalize_batch()
   accumulate_tallies();
   simulation::time_tallies.stop();
 
+  // update weight windows if needed
+  for (const auto& wwg : variance_reduction::weight_windows_generators) {
+    wwg->update();
+  }
+
   // Reset global tally results
   if (simulation::current_batch <= settings::n_inactive) {
     xt::view(simulation::global_tallies, xt::all()) = 0.0;
@@ -573,6 +593,9 @@ void initialize_history(Particle& p, int64_t index_source)
 
   // Reset weight window ratio
   p.ww_factor() = 0.0;
+
+  // Reset pulse_height_storage
+  std::fill(p.pht_storage().begin(), p.pht_storage().end(), 0);
 
   // set random number seed
   int64_t particle_seed =

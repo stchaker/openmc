@@ -29,7 +29,7 @@ extern bool confidence_intervals; //!< use confidence intervals for results?
 extern bool
   create_fission_neutrons; //!< create fission neutrons (fixed source)?
 extern bool create_delayed_neutrons; //!< create delayed fission neutrons?
-extern "C" bool cmfd_run;  //!< is a CMFD run?
+extern "C" bool cmfd_run;            //!< is a CMFD run?
 extern bool
   delayed_photon_scaling;   //!< Scale fission photon yield to include delayed
 extern "C" bool entropy_on; //!< calculate Shannon entropy?
@@ -58,7 +58,7 @@ extern "C" bool trigger_on;        //!< tally triggers enabled?
 extern bool trigger_predict;       //!< predict batches for triggers?
 extern bool ufs_on;                //!< uniform fission site method on?
 extern bool urr_ptables_on;        //!< use unresolved resonance prob. tables?
-extern bool weight_windows_on;     //!< are weight windows are enabled?
+extern "C" bool weight_windows_on; //!< are weight windows are enabled?
 extern bool write_all_tracks;      //!< write track files for every particle?
 extern bool write_initial_source;  //!< write out initial source file?
 
@@ -68,7 +68,14 @@ extern std::string path_input;  //!< directory where main .xml files resides
 extern std::string path_output; //!< directory where output files are written
 extern std::string path_particle_restart; //!< path to a particle restart file
 extern std::string path_sourcepoint;      //!< path to a source file
-extern "C" std::string path_statepoint;   //!< path to a statepoint file
+extern std::string path_statepoint;       //!< path to a statepoint file
+extern std::string weight_windows_file;   //!< Location of weight window file to
+                                          //!< load on simulation initialization
+
+// This is required because the c_str() may not be the first thing in
+// std::string. Sometimes it is, but it seems libc++ may not be like that
+// on some computers, like the intel Mac.
+extern "C" const char* path_statepoint_c; //!< C pointer to statepoint file name
 
 extern "C" int32_t n_inactive;         //!< number of inactive batches
 extern "C" int32_t max_lost_particles; //!< maximum number of lost particles

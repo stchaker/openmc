@@ -1,3 +1,4 @@
+from __future__ import annotations
 from collections.abc import Iterable
 from contextlib import contextmanager
 from functools import lru_cache
@@ -6,7 +7,8 @@ from pathlib import Path
 from numbers import Integral
 from tempfile import NamedTemporaryFile
 import warnings
-from xml.etree import ElementTree as ET
+import lxml.etree as ET
+from typing import Optional, Dict
 
 import h5py
 
@@ -14,7 +16,7 @@ import openmc
 import openmc._xml as xml
 from openmc.dummy_comm import DummyCommunicator
 from openmc.executor import _process_CLI_arguments
-from openmc.checkvalue import check_type, check_value
+from openmc.checkvalue import check_type, check_value, PathLike
 from openmc.exceptions import InvalidIDError
 
 
@@ -22,7 +24,7 @@ from openmc.exceptions import InvalidIDError
 def _change_directory(working_dir):
     """A context manager for executing in a provided working directory"""
     start_dir = Path.cwd()
-    Path.mkdir(working_dir, exist_ok=True)
+    Path.mkdir(working_dir, parents=True, exist_ok=True)
     os.chdir(working_dir)
     try:
         yield
@@ -93,27 +95,67 @@ class Model:
             self.plots = plots
 
     @property
-    def geometry(self):
+    def geometry(self) -> Optional[openmc.Geometry]:
         return self._geometry
 
+    @geometry.setter
+    def geometry(self, geometry):
+        check_type('geometry', geometry, openmc.Geometry)
+        self._geometry = geometry
+
     @property
-    def materials(self):
+    def materials(self) -> Optional[openmc.Materials]:
         return self._materials
 
+    @materials.setter
+    def materials(self, materials):
+        check_type('materials', materials, Iterable, openmc.Material)
+        if isinstance(materials, openmc.Materials):
+            self._materials = materials
+        else:
+            del self._materials[:]
+            for mat in materials:
+                self._materials.append(mat)
+
     @property
-    def settings(self):
+    def settings(self) -> Optional[openmc.Settings]:
         return self._settings
 
+    @settings.setter
+    def settings(self, settings):
+        check_type('settings', settings, openmc.Settings)
+        self._settings = settings
+
     @property
-    def tallies(self):
+    def tallies(self) -> Optional[openmc.Tallies]:
         return self._tallies
 
-    @property
-    def plots(self):
-        return self._plots
+    @tallies.setter
+    def tallies(self, tallies):
+        check_type('tallies', tallies, Iterable, openmc.Tally)
+        if isinstance(tallies, openmc.Tallies):
+            self._tallies = tallies
+        else:
+            del self._tallies[:]
+            for tally in tallies:
+                self._tallies.append(tally)
 
     @property
-    def is_initialized(self):
+    def plots(self) -> Optional[openmc.Plots]:
+        return self._plots
+
+    @plots.setter
+    def plots(self, plots):
+        check_type('plots', plots, Iterable, openmc.Plot)
+        if isinstance(plots, openmc.Plots):
+            self._plots = plots
+        else:
+            del self._plots[:]
+            for plot in plots:
+                self._plots.append(plot)
+
+    @property
+    def is_initialized(self) -> bool:
         try:
             import openmc.lib
             return openmc.lib.is_initialized
@@ -122,7 +164,7 @@ class Model:
 
     @property
     @lru_cache(maxsize=None)
-    def _materials_by_id(self):
+    def _materials_by_id(self) -> dict:
         """Dictionary mapping material ID --> material"""
         if self.materials:
             mats = self.materials
@@ -132,14 +174,14 @@ class Model:
 
     @property
     @lru_cache(maxsize=None)
-    def _cells_by_id(self):
+    def _cells_by_id(self) -> dict:
         """Dictionary mapping cell ID --> cell"""
         cells = self.geometry.get_all_cells()
         return {cell.id: cell for cell in cells.values()}
 
     @property
     @lru_cache(maxsize=None)
-    def _cells_by_name(self):
+    def _cells_by_name(self) -> Dict[int, openmc.Cell]:
         # Get the names maps, but since names are not unique, store a set for
         # each name key. In this way when the user requests a change by a name,
         # the change will be applied to all of the same name.
@@ -152,7 +194,7 @@ class Model:
 
     @property
     @lru_cache(maxsize=None)
-    def _materials_by_name(self):
+    def _materials_by_name(self) -> Dict[int, openmc.Material]:
         if self.materials is None:
             mats = self.geometry.get_all_materials().values()
         else:
@@ -164,50 +206,10 @@ class Model:
             result[mat.name].add(mat)
         return result
 
-    @geometry.setter
-    def geometry(self, geometry):
-        check_type('geometry', geometry, openmc.Geometry)
-        self._geometry = geometry
-
-    @materials.setter
-    def materials(self, materials):
-        check_type('materials', materials, Iterable, openmc.Material)
-        if isinstance(materials, openmc.Materials):
-            self._materials = materials
-        else:
-            del self._materials[:]
-            for mat in materials:
-                self._materials.append(mat)
-
-    @settings.setter
-    def settings(self, settings):
-        check_type('settings', settings, openmc.Settings)
-        self._settings = settings
-
-    @tallies.setter
-    def tallies(self, tallies):
-        check_type('tallies', tallies, Iterable, openmc.Tally)
-        if isinstance(tallies, openmc.Tallies):
-            self._tallies = tallies
-        else:
-            del self._tallies[:]
-            for tally in tallies:
-                self._tallies.append(tally)
-
-    @plots.setter
-    def plots(self, plots):
-        check_type('plots', plots, Iterable, openmc.Plot)
-        if isinstance(plots, openmc.Plots):
-            self._plots = plots
-        else:
-            del self._plots[:]
-            for plot in plots:
-                self._plots.append(plot)
-
     @classmethod
     def from_xml(cls, geometry='geometry.xml', materials='materials.xml',
                  settings='settings.xml', tallies='tallies.xml',
-                 plots='plots.xml'):
+                 plots='plots.xml') -> Model:
         """Create model from existing XML files
 
         Parameters
@@ -261,10 +263,10 @@ class Model:
         model.materials = openmc.Materials.from_xml_element(root.find('materials'))
         model.geometry = openmc.Geometry.from_xml_element(root.find('geometry'), model.materials)
 
-        if root.find('tallies'):
+        if root.find('tallies') is not None:
             model.tallies = openmc.Tallies.from_xml_element(root.find('tallies'), meshes)
 
-        if root.find('plots'):
+        if root.find('plots') is not None:
             model.plots = openmc.Plots.from_xml_element(root.find('plots'))
 
         return model
@@ -525,17 +527,17 @@ class Model:
             # This will write the XML header also
             materials._write_xml(fh, False, level=1)
             # Write remaining elements as a tree
-            ET.ElementTree(geometry_element).write(fh, encoding='unicode')
-            ET.ElementTree(settings_element).write(fh, encoding='unicode')
+            fh.write(ET.tostring(geometry_element, encoding="unicode"))
+            fh.write(ET.tostring(settings_element, encoding="unicode"))
 
             if self.tallies:
                 tallies_element = self.tallies.to_xml_element(mesh_memo)
                 xml.clean_indentation(tallies_element, level=1, trailing_indent=self.plots)
-                ET.ElementTree(tallies_element).write(fh, encoding='unicode')
+                fh.write(ET.tostring(tallies_element, encoding="unicode"))
             if self.plots:
                 plots_element = self.plots.to_xml_element()
                 xml.clean_indentation(plots_element, level=1, trailing_indent=False)
-                ET.ElementTree(plots_element).write(fh, encoding='unicode')
+                fh.write(ET.tostring(plots_element, encoding="unicode"))
             fh.write("</model>\n")
 
     def import_properties(self, filename):
@@ -573,10 +575,15 @@ class Model:
                 cell_id = int(name.split()[1])
                 cell = cells[cell_id]
                 if cell.fill_type in ('material', 'distribmat'):
-                    cell.temperature = group['temperature'][()]
+                    temperature = group['temperature'][()]
+                    cell.temperature = temperature
                     if self.is_initialized:
                         lib_cell = openmc.lib.cells[cell_id]
-                        lib_cell.set_temperature(group['temperature'][()])
+                        if temperature.size > 1:
+                            for i, T in enumerate(temperature):
+                                lib_cell.set_temperature(T, i)
+                        else:
+                            lib_cell.set_temperature(temperature[0])
 
             # Make sure number of materials matches
             mats_group = fh['materials']
@@ -597,12 +604,13 @@ class Model:
     def run(self, particles=None, threads=None, geometry_debug=False,
             restart_file=None, tracks=False, output=True, cwd='.',
             openmc_exec='openmc', mpi_args=None, event_based=None,
-            export_model_xml=True):
-        """Runs OpenMC. If the C API has been initialized, then the C API is
-        used, otherwise, this method creates the XML files and runs OpenMC via
-        a system call. In both cases this method returns the path to the last
-        statepoint file generated.
+            export_model_xml=True, **export_kwargs):
+        """Run OpenMC
 
+        If the C API has been initialized, then the C API is used, otherwise,
+        this method creates the XML files and runs OpenMC via a system call. In
+        both cases this method returns the path to the last statepoint file
+        generated.
         .. versionchanged:: 0.12
             Instead of returning the final k-effective value, this function now
             returns the path to the final statepoint written.
@@ -629,28 +637,31 @@ class Model:
             Settings.max_tracks is set. Defaults to False.
         output : bool, optional
             Capture OpenMC output from standard out
-        cwd : str, optional
-            Path to working directory to run in. Defaults to the current
-            working directory.
+        cwd : PathLike, optional
+            Path to working directory to run in. Defaults to the current working
+            directory.
         openmc_exec : str, optional
             Path to OpenMC executable. Defaults to 'openmc'.
         mpi_args : list of str, optional
-            MPI execute command and any additional MPI arguments to pass,
-            e.g. ['mpiexec', '-n', '8'].
+            MPI execute command and any additional MPI arguments to pass, e.g.
+            ['mpiexec', '-n', '8'].
         event_based : None or bool, optional
-            Turns on event-based parallelism if True. If None, the value in
-            the Settings will be used.
+            Turns on event-based parallelism if True. If None, the value in the
+            Settings will be used.
         export_model_xml : bool, optional
-            Exports a single model.xml file rather than separate files.
-            Defaults to True.
+            Exports a single model.xml file rather than separate files. Defaults
+            to True.
 
             .. versionadded:: 0.13.3
+        **export_kwargs
+            Keyword arguments passed to either :meth:`Model.export_to_model_xml`
+            or :meth:`Model.export_to_xml`.
 
         Returns
         -------
         Path
-            Path to the last statepoint written by this run
-            (None if no statepoint was written)
+            Path to the last statepoint written by this run (None if no
+            statepoint was written)
 
         """
 
@@ -695,9 +706,9 @@ class Model:
             else:
                 # Then run via the command line
                 if export_model_xml:
-                    self.export_to_model_xml()
+                    self.export_to_model_xml(**export_kwargs)
                 else:
-                    self.export_to_xml()
+                    self.export_to_xml(**export_kwargs)
                 openmc.run(particles, threads, geometry_debug, restart_file,
                            tracks, output, Path('.'), openmc_exec, mpi_args,
                            event_based)

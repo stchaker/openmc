@@ -4,7 +4,8 @@ from collections.abc import Iterable
 import hashlib
 from itertools import product
 from numbers import Real, Integral
-from xml.etree import ElementTree as ET
+import lxml.etree as ET
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -228,7 +229,7 @@ class Filter(IDManagerMixin, metaclass=FilterMeta):
 
         Returns
         -------
-        element : xml.etree.ElementTree.Element
+        element : lxml.etree._Element
             XML element containing filter data
 
         """
@@ -246,7 +247,7 @@ class Filter(IDManagerMixin, metaclass=FilterMeta):
 
         Parameters
         ----------
-        elem : xml.etree.ElementTree.Element
+        elem : lxml.etree._Element
             XML element
         **kwargs
             Keyword arguments (e.g., mesh information)
@@ -588,7 +589,7 @@ class CellInstanceFilter(Filter):
     bins : iterable of 2-tuples or numpy.ndarray
         The cell instances to tally, given as 2-tuples. For the first value in
         the tuple, either openmc.Cell objects or their integral ID numbers can
-        be used.
+        be used. The second value indicates the cell instance.
     filter_id : int
         Unique identifier for the filter
 
@@ -661,7 +662,7 @@ class CellInstanceFilter(Filter):
 
         Returns
         -------
-        element : xml.etree.ElementTree.Element
+        element : lxml.etree._Element
             XML element containing filter data
 
         """
@@ -937,7 +938,7 @@ class MeshFilter(Filter):
 
         Returns
         -------
-        element : xml.etree.ElementTree.Element
+        element : lxml.etree._Element
             XML element containing filter data
 
         """
@@ -1283,7 +1284,7 @@ class RealFilter(Filter):
 
         Returns
         -------
-        element : xml.etree.ElementTree.Element
+        element : lxml.etree._Element
             XML element containing filter data
 
         """
@@ -1574,6 +1575,11 @@ class DistribcellFilter(Filter):
     def paths(self):
         return self._paths
 
+    @paths.setter
+    def paths(self, paths):
+        cv.check_iterable_type('paths', paths, str)
+        self._paths = paths
+
     @Filter.bins.setter
     def bins(self, bins):
         # Format the bins as a 1D numpy array.
@@ -1591,11 +1597,6 @@ class DistribcellFilter(Filter):
             bins = np.atleast_1d(bins[0].id)
 
         self._bins = bins
-
-    @paths.setter
-    def paths(self, paths):
-        cv.check_iterable_type('paths', paths, str)
-        self._paths = paths
 
     def can_merge(self, other):
         # Distribcell filters cannot have more than one bin
@@ -2059,22 +2060,6 @@ class EnergyFunctionFilter(Filter):
     def energy(self):
         return self._energy
 
-    @property
-    def y(self):
-        return self._y
-
-    @property
-    def interpolation(self):
-        return self._interpolation
-
-    @property
-    def bins(self):
-        raise AttributeError('EnergyFunctionFilters have no bins.')
-
-    @property
-    def num_bins(self):
-        return 1
-
     @energy.setter
     def energy(self, energy):
         # Format the bins as a 1D numpy array.
@@ -2087,6 +2072,10 @@ class EnergyFunctionFilter(Filter):
 
         self._energy = energy
 
+    @property
+    def y(self):
+        return self._y
+
     @y.setter
     def y(self, y):
         # Format the bins as a 1D numpy array.
@@ -2097,9 +2086,9 @@ class EnergyFunctionFilter(Filter):
 
         self._y = y
 
-    @bins.setter
-    def bins(self, bins):
-        raise RuntimeError('EnergyFunctionFilters have no bins.')
+    @property
+    def interpolation(self):
+        return self._interpolation
 
     @interpolation.setter
     def interpolation(self, val):
@@ -2114,12 +2103,24 @@ class EnergyFunctionFilter(Filter):
 
         self._interpolation = val
 
+    @property
+    def bins(self):
+        raise AttributeError('EnergyFunctionFilters have no bins.')
+
+    @bins.setter
+    def bins(self, bins):
+        raise RuntimeError('EnergyFunctionFilters have no bins.')
+
+    @property
+    def num_bins(self):
+        return 1
+
     def to_xml_element(self):
         """Return XML Element representing the Filter.
 
         Returns
         -------
-        element : xml.etree.ElementTree.Element
+        element : lxml.etree._Element
             XML element containing filter data
 
         """
