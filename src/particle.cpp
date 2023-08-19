@@ -66,6 +66,13 @@ double Particle::speed() const
   return C_LIGHT * std::sqrt(1 - inv_gamma * inv_gamma);
 }
 
+void Particle::move_distance(double length)
+{
+  for (int j = 0; j < n_coord(); ++j) {
+    coord(j).r += length * coord(j).u;
+  }
+}
+
 void Particle::create_secondary(
   double wgt, Direction u, double E, ParticleType type)
 {
@@ -239,8 +246,22 @@ void Particle::event_advance()
   }
 
   // Advance particle in space and time
+  // Short-term solution until the surface source is revised and we can use
+  // this->move_distance(distance)
   for (int j = 0; j < n_coord(); ++j) {
     coord(j).r += distance * coord(j).u;
+  }
+
+  // Kill particle if its time exceeds the cutoff
+  bool hit_time_boundary = false;
+  double time_cutoff = settings::time_cutoff[static_cast<int>(type())];
+  if (time() > time_cutoff) {
+    double dt = time() - time_cutoff;
+    time() = time_cutoff;
+
+    double push_back_distance = speed() * dt;
+    this->move_distance(-push_back_distance);
+    hit_time_boundary = true;
   }
 
   // Score track-length tallies
@@ -257,6 +278,11 @@ void Particle::event_advance()
   // Score flux derivative accumulators for differential tallies.
   if (!model::active_tallies.empty()) {
     score_track_derivative(*this, distance);
+  }
+
+  // Set particle weight to zero if it hit the time boundary
+  if (hit_time_boundary) {
+    wgt() = 0.0;
   }
 }
 
