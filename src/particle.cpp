@@ -865,7 +865,7 @@ SourceSite Particle::to_source_site()
 }
 
 void Particle::update_neutron_xs(
-  int i_nuclide, int i_grid, int i_sab, double sab_fraction, double ncrystal_xs)
+  int i_nuclide, int i_grid, int i_sab, double sab_frac, double ncrystal_xs)
 {
   // Get microscopic cross section cache
   auto& micro = this->neutron_xs(i_nuclide);
@@ -878,7 +878,7 @@ void Particle::update_neutron_xs(
       // If NCrystal is being used, update micro cross section cache
       if(ncrystal_xs >= 0.0) {
         data::nuclides[i_nuclide]->calculate_elastic_xs(*this);
-	ncrystal_update_micro(ncrystal_xs, micro)
+	ncrystal_update_micro(ncrystal_xs, micro);
 	}
     }
 }
