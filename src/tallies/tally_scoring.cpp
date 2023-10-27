@@ -545,6 +545,10 @@ void score_general_ce_nonanalog(Particle& p, int i_tally, int start_index,
       score = flux;
       break;
 
+    case SCORE_NEUTRON_DENSITY:
+      score = flux / p.speed();
+      break;
+
     case SCORE_TOTAL:
       if (i_nuclide >= 0) {
         if (p.type() == Type::neutron) {
@@ -1055,6 +1059,14 @@ void score_general_ce_analog(Particle& p, int i_tally, int start_index,
         score = flux * p.wgt_last() / p.macro_xs().total;
       } else {
         score = 0.;
+      }
+      break;
+
+    case SCORE_NEUTRON_DENSITY:
+      if (p.type() == Type::neutron) {
+        score = flux * p.wgt_last() / (p.macro_xs().total * p.speed());
+      } else {
+        score = 0.0;
       }
       break;
 
@@ -1622,6 +1634,15 @@ void score_general_mg(Particle& p, int i_tally, int start_index,
         score = flux;
       }
       break;
+
+    case SCORE_NEUTRON_DENSITY:
+      if(tally.estimator_ == TallyEstimator::ANALOG) {
+        score = flux * p.wgt_last() / (p.macro_xs().total * p.speed());
+      } else{
+        score = flux / p.speed();
+      }
+      break;
+      
 
     case SCORE_TOTAL:
       if (tally.estimator_ == TallyEstimator::ANALOG) {

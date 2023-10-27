@@ -308,7 +308,8 @@ enum TallyScore {
   SCORE_FISS_Q_PROMPT = -14,      // prompt fission Q-value
   SCORE_FISS_Q_RECOV = -15,       // recoverable fission Q-value
   SCORE_DECAY_RATE = -16,         // delayed neutron precursor decay rate
-  SCORE_PULSE_HEIGHT = -17        // pulse-height
+  SCORE_PULSE_HEIGHT = -17,       // pulse-height
+  SCORE_NEUTRON_DENSITY = -18     // neutron density for DMC startup
 };
 
 // Global tally parameters
