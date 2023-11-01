@@ -490,7 +490,7 @@ void finalize_batch()
       gsl::span<SourceSite> bankspan(simulation::time_slice_bank.begin(),
         simulation::time_slice_bank.size());
       write_source_point(
-        "flight_source.h5", bankspan, time_slice_population_parallel_scan);
+        "timeslice_source.h5", bankspan, time_slice_population_parallel_scan);
       simulation::time_slice_bank_written = true;
     }
   }
