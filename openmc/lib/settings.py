@@ -36,6 +36,7 @@ class _Settings:
     verbosity = _DLLGlobal(c_int, 'verbosity')
     event_based = _DLLGlobal(c_bool, 'event_based')
     weight_windows_on = _DLLGlobal(c_bool, 'weight_windows_on')
+    num_neutrons_time_slice = _DLLGlobal(c_int64, 'num_neutrons_time_slice')
 
     @property
     def run_mode(self):
