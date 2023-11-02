@@ -343,6 +343,8 @@ class Settings:
         self._weight_window_checkpoints = {}
         self._max_splits = None
         self._max_tracks = None
+        
+        self._num_neutrons_time_slice = None
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -1016,6 +1018,16 @@ class Settings:
             wwgs = [wwgs]
         self._weight_window_generators = cv.CheckedList(WeightWindowGenerator, 'weight window generators', wwgs)
 
+    @property
+    def num_neutrons_time_slice(self) -> int:
+        return self._num_neutrons_time_slice
+    
+    @num_neutrons_time_slice.setter
+    def num_neutrons_time_slice(self, value: int):
+        cv.check_type('num_neutrons_time_slice', value, Integral)
+        cv.check_greater_than('num_neutrons_time_slice', value, 0)
+        self._num_neutrons_time_slice = value
+
     def _create_run_mode_subelement(self, root):
         elem = ET.SubElement(root, "run_mode")
         elem.text = self._run_mode.value
@@ -1416,6 +1428,11 @@ class Settings:
             elem = ET.SubElement(root, "max_tracks")
             elem.text = str(self._max_tracks)
 
+    def _create_num_neutrons_time_slice(self, root):
+        if self._num_neutrons_time_slice is not None:
+            elem = ET.SubElement(root, "num_neutrons_time_slice")
+            elem.text = str(self._num_neutrons_time_slice)
+
     def _eigenvalue_from_xml_element(self, root):
         elem = root.find('eigenvalue')
         if elem is not None:
@@ -1767,6 +1784,11 @@ class Settings:
         if text is not None:
             self.max_tracks = int(text)
 
+    def _num_neutrons_time_slice_from_xml_element(self, root):
+        text = get_text(root, "num_neutrons_time_slice")
+        if text is not None:
+            self.num_neutrons_time_slice = int(text)
+
     def to_xml_element(self, mesh_memo=None):
         """Create a 'settings' element to be written to an XML file.
 
@@ -1828,6 +1850,7 @@ class Settings:
         self._create_weight_window_checkpoints_subelement(element)
         self._create_max_splits_subelement(element)
         self._create_max_tracks_subelement(element)
+        self._create_num_neutrons_time_slice(element)
 
         # Clean the indentation in the file to be user-readable
         clean_indentation(element)
@@ -1925,6 +1948,7 @@ class Settings:
         settings._weight_window_checkpoints_from_xml_element(elem)
         settings._max_splits_from_xml_element(elem)
         settings._max_tracks_from_xml_element(elem)
+        settings._num_neutrons_time_slice_from_xml_element(elem)
 
         # TODO: Get volume calculations
         return settings

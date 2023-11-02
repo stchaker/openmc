@@ -228,6 +228,7 @@ void Particle::event_advance()
       // Sample whether this track segment gets saved as a time slice source
       // site if we're in the active cycles, which are assumed to be
       // representative of the steady state condition
+      // printf("%f\n", simulation::max_track_segment_time);
       const double save_probability = dt / simulation::max_track_segment_time;
 
       if (simulation::time_slice_bank.size() <
@@ -849,7 +850,12 @@ SourceSite Particle::to_source_site()
 {
   SourceSite site;
   int i_surface = std::abs(this->surface());
-  const auto& surf {model::surfaces[i_surface - 1].get()};
+  if(i_surface > 0 ){
+    const auto& surf {model::surfaces[i_surface - 1].get()};
+    site.surf_id = surf->id_;
+  } else {
+    site.surf_id = -1;
+  }
 
   site.r = r();
   site.u = u();
@@ -857,7 +863,6 @@ SourceSite Particle::to_source_site()
   site.time = time();
   site.wgt = wgt();
   site.delayed_group = delayed_group();
-  site.surf_id = surf->id_;
   site.particle = type();
   site.parent_id = id();
   site.progeny_id = n_progeny();

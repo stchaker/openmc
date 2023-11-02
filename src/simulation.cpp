@@ -193,6 +193,11 @@ int openmc_simulation_finalize()
     t->active_ = false;
   }
 
+  //Warn if not enough time slice neutrons were saved
+  if(!simulation::time_slice_bank_written && settings::num_neutrons_time_slice > 0){
+    warning("Not enough time-slice neutron source sites were aquired during the run");
+  }
+
   // Stop timers and show timing statistics
   simulation::time_finalize.stop();
   simulation::time_total.stop();
