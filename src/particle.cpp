@@ -230,7 +230,8 @@ void Particle::event_advance()
       // representative of the steady state condition
       // printf("%f\n", simulation::max_track_segment_time);
       const double save_probability = dt / simulation::max_track_segment_time;
-
+      // Occasionally, particles may have dt's which are greater than the converged max_track_segment_time.
+      // These particles are saved or ignored depending on if the time_slice_bank has been written or not
       if (simulation::time_slice_bank.size() <
           settings::num_neutrons_time_slice) {
         if (prn(current_seed()) < save_probability) {
@@ -241,7 +242,8 @@ void Particle::event_advance()
           site.r += xi * distance * this->u();
           site.time += xi * dt;
 
-          simulation::time_slice_bank.thread_safe_append(site);
+          // Add the saved source site to the time_slice_bank
+          simulation::time_slice_bank.thread_safe_append(site); 
         }
       }
     }
