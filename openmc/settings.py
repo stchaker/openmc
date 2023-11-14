@@ -1025,7 +1025,7 @@ class Settings:
     @num_neutrons_time_slice.setter
     def num_neutrons_time_slice(self, value: int):
         cv.check_type('num_neutrons_time_slice', value, Integral)
-        cv.check_greater_than('num_neutrons_time_slice', value, 0)
+        cv.check_greater_than('num_neutrons_time_slice', value, -1)
         self._num_neutrons_time_slice = value
 
     def _create_run_mode_subelement(self, root):

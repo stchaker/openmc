@@ -213,7 +213,7 @@ void Particle::event_advance()
   const double dt = distance / this->speed();
   this->time() += dt;
 
-  if (type() == ParticleType::neutron) {
+  if (type() == ParticleType::neutron && settings::num_neutrons_time_slice > 0) {
     if (simulation::current_batch <= settings::n_inactive) {
 // Thread-safe check if this is the biggest flight time yet:
 #pragma omp atomic read
