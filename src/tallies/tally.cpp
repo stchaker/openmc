@@ -586,7 +586,17 @@ void Tally::set_scores(const vector<std::string>& scores)
       }
 
       break;
+
+    case SCORE_NEUTRON_DENSITY:
+      if(!nuclides_.empty())
+          if(!(nuclides_.size() == 1 && nuclides_[0] == -1))
+            fatal_error("Cannot tally neutron density for an individual nuclide.");
+      if(energyout_present)
+          fatal_error("Cannot tally neutron density with an outgoing energy filter.");
+    
+      break;
     }
+
 
     scores_.push_back(score);
   }

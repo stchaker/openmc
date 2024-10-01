@@ -153,6 +153,7 @@ extern int trigger_batch_interval; //!< Batch interval for triggers
 extern "C" int verbosity;          //!< How verbose to make output
 extern double weight_cutoff;       //!< Weight cutoff for Russian roulette
 extern double weight_survive;      //!< Survival weight after Russian roulette
+extern "C" int64_t num_neutrons_time_slice; //!< Number of source sites to generated for a transient run
 
 } // namespace settings
 

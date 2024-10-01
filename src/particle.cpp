@@ -30,6 +30,7 @@
 #include "openmc/tallies/tally.h"
 #include "openmc/tallies/tally_scoring.h"
 #include "openmc/track_output.h"
+#include "openmc/transient.h"
 #include "openmc/weight_windows.h"
 
 #ifdef DAGMC
@@ -225,6 +226,46 @@ void Particle::event_advance()
 
   // Select smaller of the two distances
   double distance = std::min(boundary().distance, collision_distance());
+
+  // Routine for time-slicing a neutron source
+  const double dt = distance / this->speed(); 
+  this->time() += dt; 
+
+  if (type() == ParticleType::neutron && settings::num_neutrons_time_slice > 0) {
+    if (simulation::current_batch <= settings::n_inactive) {
+      double max_track_segment_time = 0.0;
+      // Thread safe check if this is the largest flight time yet:
+      #pragma omp atomic read
+      max_track_segment_time = simulation::max_track_segment_time;
+      
+      // If so, save new max flight time
+      if(max_track_segment_time < dt) {
+        #pragma omp atomic write
+        simulation::max_track_segment_time = dt;
+      }
+    } else {
+      // Sample whether this track segement gets saved as a time sliced source
+      // Site if we're in the active cycles, which are assumed to be 
+      // Representative of the steady state condition
+      
+      const double save_probability = dt / simulation::max_track_segment_time;
+      // Occasionally, particles may have dt's which are greater than the converged max_track_segment_time
+      // These particles are saved or ignored depending on if the bank has been written or not
+      if (simulation::time_slice_bank.size() < settings::num_neutrons_time_slice) {
+        if(prn(current_seed()) < save_probability) {
+          SourceSite site = this->to_source_site();
+
+          // Advance to a random position along the track for saving
+          const double xi = prn(current_seed()); 
+          site.r += xi * distance * this->u(); 
+          site.time += xi * dt;
+
+          // Add the svaed source site to the bank
+          simulation::time_slice_bank.thread_safe_append(site);
+        }
+      }
+    }
+  }
 
   // Advance particle in space and time
   // Short-term solution until the surface source is revised and we can use
@@ -828,6 +869,28 @@ void Particle::write_restart() const
     // Close file
     file_close(file_id);
   } // #pragma omp critical
+}
+
+SourceSite Particle::to_source_site(){
+  SourceSite site;
+  int i_surface = std::abs(this->surface());
+  if(i_surface > 0){
+    const auto& surf {model::surfaces[i_surface-1].get()};
+    site.surf_id = surf->id_;
+  } else {
+    site.surf_id = -1; 
+  }
+
+  site.r = r();
+  site.u = u();
+  site.E = E();
+  site.time = time();
+  site.wgt = wgt();
+  site.delayed_group = delayed_group();
+  site.particle = type();
+  site.parent_id = id();
+  site.progeny_id = n_progeny(); 
+  return site; 
 }
 
 void Particle::update_neutron_xs(

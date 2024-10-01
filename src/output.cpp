@@ -601,6 +601,7 @@ const std::unordered_map<int, const char*> score_names = {
   {SCORE_FISS_Q_RECOV, "Recoverable fission power"},
   {SCORE_CURRENT, "Current"},
   {SCORE_PULSE_HEIGHT, "pulse-height"},
+  {SCORE_NEUTRON_DENSITY, "neutron-density"},
 };
 
 //! Create an ASCII output file showing all tally results.

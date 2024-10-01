@@ -380,6 +380,7 @@ class Settings:
         self._weight_window_checkpoints = {}
         self._max_history_splits = None
         self._max_tracks = None
+        self._num_neutrons_time_slice = None
 
         self._random_ray = {}
 
@@ -1075,6 +1076,17 @@ class Settings:
         if not isinstance(wwgs, MutableSequence):
             wwgs = [wwgs]
         self._weight_window_generators = cv.CheckedList(WeightWindowGenerator, 'weight window generators', wwgs)
+    
+    @property 
+    def num_neutrons_time_slice(self) -> int:
+        return self.num_neutrons_time_slice
+
+    @num_neutrons_time_slice.setter
+    def num_neutrons_time_slice(self, value: int):
+        cv.check_type('num_neutrons_time_slice', value, Integral)
+        cv.check_greater_than('num_neutrons_time_slice', value, -1)
+        self._num_neutrons_time_slice = value 
+
 
     @property
     def random_ray(self) -> dict:
@@ -1524,6 +1536,11 @@ class Settings:
             elem = ET.SubElement(root, "max_tracks")
             elem.text = str(self._max_tracks)
 
+    def _create_num_neutrons_time_slice(self, root):
+        if self._num_neutrons_time_slice is not None:
+            elem = ET.SubElement(root, "num_neutrons_time_slice")
+            elem.text = str(self._num_neutrons_time_slice)
+
     def _create_random_ray_subelement(self, root):
         if self._random_ray:
             element = ET.SubElement(root, "random_ray")
@@ -1887,6 +1904,11 @@ class Settings:
         if text is not None:
             self.max_tracks = int(text)
 
+    def _num_neutrons_time_slice_from_xml_element(self, root):
+        text = get_text(root, "num_neutrons_time_slice")
+        if text is None:
+            self.num_neutrons_time_slice = int(text); 
+
     def _random_ray_from_xml_element(self, root):
         elem = root.find('random_ray')
         if elem is not None:
@@ -1968,6 +1990,7 @@ class Settings:
         self._create_weight_window_checkpoints_subelement(element)
         self._create_max_history_splits_subelement(element)
         self._create_max_tracks_subelement(element)
+        self._create_num_neutrons_time_slice(element)
         self._create_random_ray_subelement(element)
 
         # Clean the indentation in the file to be user-readable
@@ -2072,6 +2095,7 @@ class Settings:
         settings._weight_window_checkpoints_from_xml_element(elem)
         settings._max_history_splits_from_xml_element(elem)
         settings._max_tracks_from_xml_element(elem)
+        settings._num_neutrons_time_slice_from_xml_element(elem)
         settings._random_ray_from_xml_element(elem)
 
         # TODO: Get volume calculations
