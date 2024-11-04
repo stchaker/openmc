@@ -484,7 +484,7 @@ void finalize_batch()
           fmt::print(" Writing time slice bank...");
         }
         gsl::span<SourceSite> bankspan(simulation::time_slice_bank.begin(), simulation::time_slice_bank.size()); 
-        write_source_point("timeslice_source.h5", bankspan, time_slice_population_parallel_scan);
+        write_source_point("timeslice_source.h5", bankspan, time_slice_population_parallel_scan, false);
         simulation::time_slice_bank_written = true; 
       }
     }
