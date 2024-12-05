@@ -599,7 +599,7 @@ void Tally::set_scores(const vector<std::string>& scores)
 
     case SCORE_PRECURSORS:
       if(settings::num_neutrons_time_slice == 0){
-        fatal_error("Cannot tally precursors without a time-slice source of neutrons.")        
+        fatal_error("Cannot tally precursors without a time-slice source of neutrons.");        
       }
 
       break;
