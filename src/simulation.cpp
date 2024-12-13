@@ -479,12 +479,8 @@ void finalize_batch()
     if(settings::num_neutrons_time_slice > 0 && !simulation::time_slice_bank_written) {
       std::vector<int64_t> time_slice_population_parallel_scan = mpi::calculate_parallel_index_vector(simulation::time_slice_bank.size());
       if(time_slice_population_parallel_scan.back() >= settings::num_neutrons_time_slice) {
-        // Write out the bank
-        if(mpi::rank == 0) {
-          fmt::print(" Writing time slice bank...");
-        }
         gsl::span<SourceSite> bankspan(simulation::time_slice_bank.begin(), simulation::time_slice_bank.size()); 
-        write_source_point("timeslice_source.h5", bankspan, time_slice_population_parallel_scan, false);
+        write_source_point("timeslice_source", bankspan, time_slice_population_parallel_scan, false);
         simulation::time_slice_bank_written = true; 
       }
     }

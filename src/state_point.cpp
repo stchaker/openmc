@@ -28,6 +28,7 @@
 #include "openmc/tallies/filter_mesh.h"
 #include "openmc/tallies/tally.h"
 #include "openmc/timer.h"
+#include "openmc/transient.h"       
 #include "openmc/vector.h"
 
 namespace openmc {
@@ -41,6 +42,8 @@ extern "C" int openmc_statepoint_write(const char* filename, bool* write_source)
   std::string filename_;
   if (filename) {
     filename_ = filename;
+  } else if (simulation::time_slice_bank_written){
+    filename_ = "dmc_statepoint.h5";
   } else {
     // Determine width for zero padding
     int w = std::to_string(settings::n_max_batches).size();
