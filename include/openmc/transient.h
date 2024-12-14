@@ -26,6 +26,8 @@ namespace simulation {
   extern bool time_slice_bank_written ;
 
 } // namespace simulation
+
+void finalize_dmc_source(); //function to call to generate the proper precursor concentrations in the dmc.statepoint.h5 file 
 } // namespace openmc
 
 #endif // OPENMC_TRANSIENT_H

@@ -24,6 +24,7 @@
 #include "openmc/tallies/tally.h"
 #include "openmc/thermal.h"
 #include "openmc/timer.h"
+#include "openmc/transient.h"
 #include "openmc/volume_calc.h"
 #include "openmc/weight_windows.h"
 
@@ -65,6 +66,10 @@ int openmc_finalize()
 {
   if (simulation::initialized)
     openmc_simulation_finalize();
+
+  // Check and modify time-dependent source if needed
+  if(simulation::time_slice_bank_written)
+    finalize_dmc_source();
 
   // Clear results
   openmc_reset();
