@@ -421,6 +421,10 @@ FileSource::FileSource(const std::string& path)
   load_sites_from_file(path);
 }
 
+vector<SourceSite> FileSource::get_sites_from_file() {
+  return sites_;
+}
+
 void FileSource::load_sites_from_file(const std::string& path)
 {
   // Check if source file exists

@@ -164,6 +164,8 @@ public:
   void load_sites_from_file(
     const std::string& path); //!< Load source sites from file
 
+  vector<SourceSite> get_sites_from_file();
+
 protected:
   SourceSite sample(uint64_t* seed) const override;
 
