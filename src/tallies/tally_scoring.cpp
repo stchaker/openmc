@@ -920,9 +920,8 @@ void score_general_ce_nonanalog(Particle& p, int i_tally, int start_index,
                   auto yield =
                     nuc.nu(E, ReactionProduct::EmissionMode::delayed, d);
                   auto rate = product.decay_rate_;
-                  auto temp_score = (p.neutron_xs(j_nuclide).fission * yield *
+                  score = (p.neutron_xs(j_nuclide).fission * yield *
                            atom_density * flux) / rate;
-                  score += temp_score / n_conc;
                   //score += settings::num_neutrons_time_slice / ratio;
                 }
               }
