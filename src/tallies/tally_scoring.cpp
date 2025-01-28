@@ -844,14 +844,11 @@ void score_general_ce_nonanalog(Particle& p, int i_tally, int start_index,
             model::tally_filters[i_dg_filt].get())};
           // Tally each delayed group bin individually
           for (auto d_bin = 0; d_bin < filt.n_bins(); ++d_bin) {
-            auto n_conc = flux / p.speed();
             auto d = filt.groups()[d_bin];
             auto yield = nuc.nu(E, ReactionProduct::EmissionMode::delayed, d);
             auto rate = rxn.products_[d].decay_rate_;
-            auto temp_score = (p.neutron_xs(i_nuclide).fission * yield * flux *
+            score = (p.neutron_xs(i_nuclide).fission * yield * flux *
                     atom_density) / rate;
-            score = temp_score / n_conc; 
-            //score = settings::num_neutrons_time_slice / ratio;
             score_fission_delayed_dg(
               i_tally, d_bin, score, score_index, p.filter_matches());
           }
@@ -867,13 +864,10 @@ void score_general_ce_nonanalog(Particle& p, int i_tally, int start_index,
             const auto& product = rxn.products_[d];
             if (product.particle_ != Type::neutron)
               continue;
-            auto n_conc = flux / p.speed();
             auto yield = nuc.nu(E, ReactionProduct::EmissionMode::delayed, d);
             auto rate = product.decay_rate_;
-            auto temp_score = ((p.neutron_xs(i_nuclide).fission * flux * yield *
+            score += ((p.neutron_xs(i_nuclide).fission * flux * yield *
                      atom_density) / rate);
-            score += temp_score / n_conc;
-            //score += settings::num_neutrons_time_slice / ratio;
           }
         }
       } else {
@@ -891,15 +885,12 @@ void score_general_ce_nonanalog(Particle& p, int i_tally, int start_index,
                 const auto& rxn {*nuc.fission_rx_[0]};
                 // Tally each delayed group bin individually
                 for (auto d_bin = 0; d_bin < filt.n_bins(); ++d_bin) {
-                  auto n_conc = flux / p.speed();
                   auto d = filt.groups()[d_bin];
                   auto yield =
                     nuc.nu(E, ReactionProduct::EmissionMode::delayed, d);
                   auto rate = rxn.products_[d].decay_rate_;
-                  auto temp_score = (p.neutron_xs(j_nuclide).fission * yield * flux *
+                  score = (p.neutron_xs(j_nuclide).fission * yield * flux *
                           atom_density) / rate;
-                  score = temp_score/n_conc;
-                  //score = settings::num_neutrons_time_slice / ratio;
                   score_fission_delayed_dg(
                     i_tally, d_bin, score, score_index, p.filter_matches());
                 }
@@ -926,7 +917,6 @@ void score_general_ce_nonanalog(Particle& p, int i_tally, int start_index,
                   const auto& product = rxn.products_[d];
                   if (product.particle_ != Type::neutron)
                     continue;
-                  auto n_conc = flux/p.speed();
                   auto yield =
                     nuc.nu(E, ReactionProduct::EmissionMode::delayed, d);
                   auto rate = product.decay_rate_;
@@ -1532,17 +1522,12 @@ void score_general_ce_analog(Particle& p, int i_tally, int start_index,
               model::tally_filters[i_dg_filt].get())};
             // Tally each delayed group bin individually
             for (auto d_bin = 0; d_bin < filt.n_bins(); ++d_bin) {
-              auto n_conc = flux / p.speed();
               auto d = filt.groups()[d_bin];
               auto yield = nuc.nu(E, ReactionProduct::EmissionMode::delayed, d);
               auto rate = rxn.products_[d].decay_rate_;
-              auto temp_score = ((p.wgt_last() * yield *
+              score = ((p.wgt_last() * yield *
                       p.neutron_xs(p.event_nuclide()).fission /
                       p.neutron_xs(p.event_nuclide()).total) * flux) / rate;
-              score = temp_score / n_conc;
-              //score = settings::num_neutrons_time_slice / ratio;
-              score_fission_delayed_dg(
-                i_tally, d_bin, score, score_index, p.filter_matches());
             }
             continue;
           } else {
@@ -1560,14 +1545,11 @@ void score_general_ce_analog(Particle& p, int i_tally, int start_index,
               const auto& product = rxn.products_[d];
               if (product.particle_ != Type::neutron)
                 continue;
-              auto n_conc = flux/p.speed();
               auto yield = nuc.nu(E, ReactionProduct::EmissionMode::delayed, d);
               auto rate = product.decay_rate_;
-              auto temp_score =(p.wgt_last() *
+              score =(p.wgt_last() *
                        p.neutron_xs(p.event_nuclide()).fission * yield /
                        p.neutron_xs(p.event_nuclide()).total * flux) / rate;
-              score += temp_score / n_conc;
-              //score += settings::num_neutrons_time_slice / ratio; 
             }
           }
         }
@@ -1587,13 +1569,10 @@ void score_general_ce_analog(Particle& p, int i_tally, int start_index,
           const auto& bank = p.nu_bank(i);
           auto g = bank.delayed_group;
           if (g != 0) {
-            auto n_conc = flux / p.speed();
             const auto& nuc {*data::nuclides[p.event_nuclide()]};
             const auto& rxn {*nuc.fission_rx_[0]};
             auto rate = rxn.products_[g].decay_rate_;
-            auto temp_score = (simulation::keff * bank.wgt * flux) / rate;
-            score += temp_score / n_conc;
-            //score += settings::num_neutrons_time_slice / ratio;
+            score = (simulation::keff * bank.wgt * flux) / rate;
             if (tally.delayedgroup_filter_ != C_NONE) {
               auto i_dg_filt = tally.filters()[tally.delayedgroup_filter_];
               const DelayedGroupFilter& filt {
@@ -2430,25 +2409,21 @@ void score_general_mg(Particle& p, int i_tally, int start_index,
                   model::tally_filters[i_dg_filt].get())};
               // Tally each delayed group bin individually
               for (auto d_bin = 0; d_bin < filt.n_bins(); ++d_bin) {
-                auto n_conc = flux * p.wgt_last() / (p.macro_xs().total * p.speed());
                 auto d = filt.groups()[d_bin] - 1;
                 score = wgt_absorb * flux;
                 if (i_nuclide >= 0) {
-                  auto temp_score = nuc_xs.get_xs(MgxsType::DELAYED_NU_FISSION, p_g, nullptr,
+                  score = nuc_xs.get_xs(MgxsType::DELAYED_NU_FISSION, p_g, nullptr,
                              nullptr, &d, nuc_t, nuc_a) /
                            nuc_xs.get_xs(MgxsType::DECAY_RATE, p_g,
                              nullptr, nullptr, &d, nuc_t, nuc_a) /
                            abs_xs;
-                  score *= temp_score / n_conc;
                   //score *= settings::num_neutrons_time_slice / ratio;
                 } else {
-                  auto temp_score = macro_xs.get_xs(MgxsType::DELAYED_NU_FISSION, p_g, nullptr,
+                  score = macro_xs.get_xs(MgxsType::DELAYED_NU_FISSION, p_g, nullptr,
                              nullptr, &d, macro_t, macro_a) /
                            macro_xs.get_xs(MgxsType::DECAY_RATE, p_g,
                              nullptr, nullptr, &d, macro_t, macro_a) /
                            abs_xs;
-                  score *= temp_score / n_conc;
-                  //score *= settings::num_neutrons_time_slice / ratio;
                 }
                 score_fission_delayed_dg(
                   i_tally, d_bin, score, score_index, p.filter_matches());
@@ -2461,25 +2436,20 @@ void score_general_mg(Particle& p, int i_tally, int start_index,
               // groups
               score = 0.;
               for (auto d = 0; d < data::mg.num_delayed_groups_; ++d) {
-                auto n_conc = flux * p.wgt_last() / (p.macro_xs().total * p.speed());
                 if (i_nuclide >= 0) {
-                  auto temp_score = wgt_absorb * flux /
+                  score += wgt_absorb * flux /
                            nuc_xs.get_xs(MgxsType::DECAY_RATE, p_g, nullptr,
                              nullptr, &d, nuc_t, nuc_a) *
                            nuc_xs.get_xs(MgxsType::DELAYED_NU_FISSION, p_g,
                              nullptr, nullptr, &d, nuc_t, nuc_a) /
                            abs_xs;
-                  score += temp_score / n_conc;
-                  //score += settings::num_neutrons_time_slice / ratio;
                 } else {
-                  auto temp_score = wgt_absorb * flux /
+                  score += wgt_absorb * flux /
                            macro_xs.get_xs(MgxsType::DECAY_RATE, p_g, nullptr,
                              nullptr, &d, macro_t, macro_a) *
                            macro_xs.get_xs(MgxsType::DELAYED_NU_FISSION, p_g,
                              nullptr, nullptr, &d, macro_t, macro_a) /
                            abs_xs;
-                  score += temp_score / n_conc;
-                  //score += settings::num_neutrons_time_slice / ratio; 
                 }
               }
             }
@@ -2499,23 +2469,17 @@ void score_general_mg(Particle& p, int i_tally, int start_index,
           for (auto i = 0; i < p.n_bank(); ++i) {
             const auto& bank = p.nu_bank(i);
             auto d = bank.delayed_group - 1;
-            auto n_conc = flux * p.wgt_last() / (p.macro_xs().total * p.speed());
             if (d != -1) {
               if (i_nuclide >= 0) {
-                auto temp_score =
-                  simulation::keff * atom_density * bank.wgt * flux /
+                score = simulation::keff * atom_density * bank.wgt * flux /
                   nuc_xs.get_xs(MgxsType::DECAY_RATE, p_g, nullptr, nullptr, &d,
                     nuc_t, nuc_a) *
                   nuc_xs.get_xs(MgxsType::FISSION, p_g, nuc_t, nuc_a) /
                   macro_xs.get_xs(MgxsType::FISSION, p_g, macro_t, macro_a);
-                score += temp_score / n_conc;
-                //score += settings::num_neutrons_time_slice / ratio;
               } else {
-                auto temp_score = simulation::keff * bank.wgt * flux /
+                score = simulation::keff * bank.wgt * flux /
                          macro_xs.get_xs(MgxsType::DECAY_RATE, p_g, nullptr,
                            nullptr, &d, macro_t, macro_a);
-                score += temp_score/n_conc;
-                //score += settings::num_neutrons_time_slice / ratio;
               }
               if (tally.delayedgroup_filter_ != C_NONE) {
                 auto i_dg_filt = tally.filters()[tally.delayedgroup_filter_];
@@ -2542,25 +2506,20 @@ void score_general_mg(Particle& p, int i_tally, int start_index,
           const DelayedGroupFilter& filt {*dynamic_cast<DelayedGroupFilter*>(
             model::tally_filters[i_dg_filt].get())};
           // Tally each delayed group bin individually
-          auto n_conc = flux / p.speed();
           for (auto d_bin = 0; d_bin < filt.n_bins(); ++d_bin) {
             auto d = filt.groups()[d_bin] - 1;
             if (i_nuclide >= 0) {
-              auto temp_score = atom_density * flux /
+              score = atom_density * flux /
                       nuc_xs.get_xs(MgxsType::DECAY_RATE, p_g, nullptr, nullptr,
                         &d, nuc_t, nuc_a) *
                       nuc_xs.get_xs(MgxsType::DELAYED_NU_FISSION, p_g, nullptr,
                         nullptr, &d, nuc_t, nuc_a);
-              score = temp_score / n_conc;
-              //score = settings::num_neutrons_time_slice / ratio; 
             } else {
-              auto temp_score = flux /
+              score = flux /
                       macro_xs.get_xs(MgxsType::DECAY_RATE, p_g, nullptr,
                         nullptr, &d, macro_t, macro_a) *
                       macro_xs.get_xs(MgxsType::DELAYED_NU_FISSION, p_g,
                         nullptr, nullptr, &d, macro_t, macro_a);
-              score = temp_score / n_conc;
-              //score = settings::num_neutrons_time_slice / ratio; 
             }
             score_fission_delayed_dg(
               i_tally, d_bin, score, score_index, p.filter_matches());
@@ -2568,25 +2527,20 @@ void score_general_mg(Particle& p, int i_tally, int start_index,
           continue;
         } else {
           score = 0.;
-          auto n_conc = flux / p.speed();
           for (auto d = 0; d < data::mg.num_delayed_groups_; ++d) {
             if (i_nuclide >= 0) {
-              auto temp_score = atom_density * flux /
+              score += atom_density * flux /
                        nuc_xs.get_xs(MgxsType::DECAY_RATE, p_g, nullptr,
                          nullptr, &d, nuc_t, nuc_a) *
                        nuc_xs.get_xs(MgxsType::DELAYED_NU_FISSION, p_g, nullptr,
                          nullptr, &d, nuc_t, nuc_a);
-              score += temp_score / n_conc;
-              //score += settings::num_neutrons_time_slice / ratio;
              
             } else {
-              auto temp_score = flux /
+              score += flux /
                        macro_xs.get_xs(MgxsType::DECAY_RATE, p_g, nullptr,
                          nullptr, &d, macro_t, macro_a) *
                        macro_xs.get_xs(MgxsType::DELAYED_NU_FISSION, p_g,
                          nullptr, nullptr, &d, macro_t, macro_a);
-              score += temp_score / n_conc;
-              //score += settings::num_neutrons_time_slice / ratio; 
             }
           }
         }
