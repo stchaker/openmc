@@ -1,3 +1,4 @@
+# Set project name and version
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 project(openmc C CXX)
 
