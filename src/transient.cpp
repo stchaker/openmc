@@ -65,10 +65,8 @@ vector<double> create_dnp_neutron_ratios(const vector<double>& dnps, const vecto
     if(i%num_delayed_groups == 0 and i!= 0){
       neutron_counter++;
     }
-    std::cout << neutron_counter << " ";
     ratios[i] = dnps[i] / neutrons[neutron_counter];
   }
-  std::cout << '\n';
   return ratios; 
 }
 
@@ -106,6 +104,9 @@ void finalize_dmc_source(){
 
   //create a vector of DNP/Neutron concentration ratios
   vector<double> dnp_neutron_ratio = create_dnp_neutron_ratios(dnp_tally_results, neutron_tally_results);
+
+  //create a PDF discrete vector of neutron concentration across all mesh bins
+  
 
   // manage resources
   close_dataset(dnp_dataset);
