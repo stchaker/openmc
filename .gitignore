@@ -32,6 +32,9 @@ docs/source/pythonapi/generated/
 # Source build
 build
 
+# Debug builds
+build-debug
+
 # build from src/utils/setup.py
 src/utils/build
 
