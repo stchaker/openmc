@@ -435,7 +435,7 @@ void FileSource::load_sites_from_file(const std::string& path)
   // Read the source from a binary file instead of sampling from some
   // assumed source distribution
   write_message(6, "Reading source file from {}...", path);
-
+  
   // Open the binary file
   hid_t file_id = file_open(path, 'r', true);
 
