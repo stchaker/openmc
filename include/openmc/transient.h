@@ -6,6 +6,7 @@
 
 #include "openmc/particle.h"
 #include "openmc/shared_array.h"
+#include "hdf5.h"
 
 namespace openmc {
 
@@ -26,8 +27,11 @@ namespace simulation {
   extern bool time_slice_bank_written ;
 
 } // namespace simulation
-
-void finalize_dmc_source(); //function to call to generate the proper precursor concentrations in the dmc.statepoint.h5 file 
+const size_t calculate_timeslice_size(); // function to find size of time-slice bank from hdf5 file
+void get_tally_shape(hid_t obj_id, hsize_t* dims); // function to get the shape of the tally data in dmc.statepoint.h5 file
+void read_tally_data(hid_t obj_id, hsize_t* dims, double* data); // function to read in the tally data from dmc.statepoint.h5 file
+vector<double> create_dnp_neutron_ratios(const vector<double>& dnps, const vector<double>& neutrons); // function to get dnp/neutron ratios for dmc startup.
+void finalize_dmc_source(); // function to call to generate the proper precursor concentrations in the dmc.statepoint.h5 file 
 } // namespace openmc
 
 #endif // OPENMC_TRANSIENT_H
