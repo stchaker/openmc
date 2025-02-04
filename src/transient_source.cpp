@@ -1,4 +1,4 @@
-#include "openmc/transient.h"
+#include "openmc/transient_source.h"
 #include "openmc/source.h"
 #include "openmc/hdf5_interface.h"
 #include "hdf5.h"

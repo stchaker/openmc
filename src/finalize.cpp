@@ -24,7 +24,7 @@
 #include "openmc/tallies/tally.h"
 #include "openmc/thermal.h"
 #include "openmc/timer.h"
-#include "openmc/transient.h"
+#include "openmc/transient_source.h"
 #include "openmc/volume_calc.h"
 #include "openmc/weight_windows.h"
 

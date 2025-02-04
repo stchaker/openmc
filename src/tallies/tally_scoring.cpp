@@ -18,7 +18,7 @@
 #include "openmc/tallies/filter_cell.h"
 #include "openmc/tallies/filter_delayedgroup.h"
 #include "openmc/tallies/filter_energy.h"
-#include "openmc/transient.h"
+#include "openmc/transient_source.h"
 
 #include <string>
 

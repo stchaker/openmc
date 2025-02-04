@@ -30,7 +30,7 @@
 #include "openmc/tallies/tally.h"
 #include "openmc/tallies/tally_scoring.h"
 #include "openmc/track_output.h"
-#include "openmc/transient.h"
+#include "openmc/transient_source.h"
 #include "openmc/weight_windows.h"
 
 #ifdef DAGMC

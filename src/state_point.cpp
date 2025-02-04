@@ -28,7 +28,7 @@
 #include "openmc/tallies/filter_mesh.h"
 #include "openmc/tallies/tally.h"
 #include "openmc/timer.h"
-#include "openmc/transient.h"       
+#include "openmc/transient_source.h"       
 #include "openmc/vector.h"
 
 namespace openmc {
