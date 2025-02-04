@@ -37,6 +37,7 @@ extern bool confidence_intervals; //!< use confidence intervals for results?
 extern bool
   create_fission_neutrons; //!< create fission neutrons (fixed source)?
 extern bool create_delayed_neutrons; //!< create delayed fission neutrons?
+extern "C" bool create_transient_source; //!< create a transient_source.h5 for future run? 
 extern "C" bool cmfd_run;            //!< is a CMFD run?
 extern bool
   delayed_photon_scaling;   //!< Scale fission photon yield to include delayed

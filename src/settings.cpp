@@ -48,6 +48,7 @@ bool cmfd_run {false};
 bool confidence_intervals {false};
 bool create_delayed_neutrons {true};
 bool create_fission_neutrons {true};
+bool create_transient_source {false};
 bool delayed_photon_scaling {true};
 bool entropy_on {false};
 bool event_based {false};
@@ -1018,6 +1019,10 @@ void read_settings_xml(pugi::xml_node root)
       create_fission_neutrons =
         get_node_value_bool(root, "create_fission_neutrons");
     }
+  }
+
+  if(check_for_node(root, "create_transient_source")) {
+    settings::create_transient_source = get_node_value_bool(root, "create_transient_source");
   }
 
   // Check whether to scale fission photon yields

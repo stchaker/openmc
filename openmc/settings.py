@@ -368,6 +368,7 @@ class Settings:
 
         self._create_fission_neutrons = None
         self._create_delayed_neutrons = None
+        self._create_transient_source = None
         self._delayed_photon_scaling = None
         self._material_cell_offsets = None
         self._log_grid_bins = None
@@ -949,6 +950,16 @@ class Settings:
         self._create_delayed_neutrons = create_delayed_neutrons
 
     @property
+    def create_transient_source(self) -> bool:
+        return self._create_transient_source
+    
+    @create_transient_source.setter
+    def create_transient_source(self, create_transient_source: bool):
+        cv.check_type('Whether create a transient source',
+                      create_transient_source, bool)
+        self._create_transient_source = create_transient_source
+
+    @property
     def delayed_photon_scaling(self) -> bool:
         return self._delayed_photon_scaling
 
@@ -1443,6 +1454,11 @@ class Settings:
         if self._create_delayed_neutrons is not None:
             elem = ET.SubElement(root, "create_delayed_neutrons")
             elem.text = str(self._create_delayed_neutrons).lower()
+    
+    def _create_create_transient_source_subelement(self, root):
+        if self._create_transient_source is not None:
+            elem = ET.SubElement(root, "create_transient_source")
+            elem.text = str(self._create_transient_source).lower()
 
     def _create_delayed_photon_scaling_subelement(self, root):
         if self._delayed_photon_scaling is not None:
@@ -1846,6 +1862,11 @@ class Settings:
         if text is not None:
             self.create_delayed_neutrons = text in ('true', '1')
 
+    def _create_transient_source_from_xml_element(self, root):
+        text = get_text(root, 'create_transient_source')
+        if text is not None:
+                self.create_transient_source = text in ('true', '1')
+
     def _delayed_photon_scaling_from_xml_element(self, root):
         text = get_text(root, 'delayed_photon_scaling')
         if text is not None:
@@ -1988,6 +2009,7 @@ class Settings:
         self._create_volume_calcs_subelement(element)
         self._create_create_fission_neutrons_subelement(element)
         self._create_create_delayed_neutrons_subelement(element)
+        self._create_create_transient_source_subelement(element)
         self._create_delayed_photon_scaling_subelement(element)
         self._create_event_based_subelement(element)
         self._create_max_particles_in_flight_subelement(element)
@@ -2094,6 +2116,7 @@ class Settings:
         settings._resonance_scattering_from_xml_element(elem)
         settings._create_fission_neutrons_from_xml_element(elem)
         settings._create_delayed_neutrons_from_xml_element(elem)
+        settings._create_transient_source_from_xml_element(elem)
         settings._delayed_photon_scaling_from_xml_element(elem)
         settings._event_based_from_xml_element(elem)
         settings._max_particles_in_flight_from_xml_element(elem)

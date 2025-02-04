@@ -67,15 +67,6 @@ void check_correct_tallies(hid_t obj_id_dnp, hid_t obj_id_neutron){
   H5Tclose(datatype_neutron);
 }
 
-// returns the size of the timeslice bank written out during the simulation
-const size_t calculate_timeslice_size() {
-  const std::string file_path = "timeslice_source.h5";
-  FileSource file_source = FileSource(file_path);
-  vector<SourceSite> neutron_sites = file_source.get_sites_from_file();
-  const size_t timeslice_bank_size = neutron_sites.size();  
-  return timeslice_bank_size; 
-}
-
 // returns the size of the 1D array tallies
 void get_tally_shape(hid_t obj_id, hsize_t* dims) {
   hid_t d_space;
@@ -117,7 +108,7 @@ void read_tally_data(hid_t obj_id, hsize_t* dims, const int ndims, double* data)
 vector<double> create_dnp_neutron_ratios(const vector<double>& dnps, const vector<double>& neutrons) {
   vector<double> ratios(dnps.size());
   int neutron_counter = 0;
-  const int num_delayed_groups = 6;
+  constexpr int num_delayed_groups = 6;
   for(int i=0; i<dnps.size(); i++){
     if(i%num_delayed_groups == 0 and i!= 0){
       neutron_counter++;
@@ -127,17 +118,42 @@ vector<double> create_dnp_neutron_ratios(const vector<double>& dnps, const vecto
   return ratios; 
 }
 
+// create a normalized discrete pdf of neutron concentrations, normalized to 1. 
+vector<double> create_neutron_pdf(const vector<double>& neutrons){
+  vector<double> pdf;
+  double sum = 0.0;
+  for(double value : neutrons){
+    sum += value;
+  }
+  for(int i=0; i<neutrons.size(); i++){
+    double val = (neutrons[i] / sum);
+    pdf.emplace_back(val);
+  }
+  return pdf;
+}
+
+// function to use the dnp/n ratios and pdf to create the problem normalized precursor concentrations
+vector<double> calculate_normalized_precursors(const vector<double>& ratios, const vector<double>& pdf){
+  vector<double> normalized_precursors; 
+  constexpr int num_delayed_groups = 6;
+  int neutron_counter = 0;
+  for(int i=0; i<ratios.size(); i++){
+    if(i%num_delayed_groups == 0 and i!= 0){
+      neutron_counter++;
+    }
+    normalized_precursors.emplace_back(ratios[i] * pdf[neutron_counter]);
+  }
+  return normalized_precursors;
+}
+
 // routine to create the dmc_startup.h5 file needed for dmc simulation
 void finalize_dmc_source(){
   // constant expressions
   constexpr int ndims = 3;
 
-  // obtain time_slice bank size
-  const size_t timeslice_size = calculate_timeslice_size();
-
-  // open dmc_statepoint file
-  const std::string filename = "dmc_statepoint.h5";
-  hid_t file_id = file_open(filename, 'r', false);
+  // open transient statepoint file
+  const std::string filename = "transient_statepoint.h5";
+  hid_t file_id = file_open(filename, 'a', false);
 
   // check for the existence of the necessary tallies
   check_tally_exists(file_id);
@@ -165,11 +181,21 @@ void finalize_dmc_source(){
   read_tally_data(dnp_dataset, dnp_dims, ndims, dnp_tally_results.data());
   read_tally_data(neutron_dataset, neutron_dims, ndims, neutron_tally_results.data());
 
-  //create a vector of DNP/Neutron concentration ratios
+  // create a vector of DNP/Neutron concentration ratios
   vector<double> dnp_neutron_ratio = create_dnp_neutron_ratios(dnp_tally_results, neutron_tally_results);
 
-  //create a PDF discrete vector of neutron concentration across all mesh bins
-  
+  // create a PDF discrete vector of neutron concentration across all mesh bins
+  vector<double> neutron_pdf = create_neutron_pdf(neutron_tally_results);
+
+  // multiply the values of the pdf by the value of the number of neutrons in the time slice, then multiply this by the ratio vector
+  for(double value : neutron_pdf){
+    value *= settings::num_neutrons_time_slice; 
+  }
+
+  vector<double> finalized_dnps = calculate_normalized_precursors(dnp_neutron_ratio, neutron_pdf);
+
+  // Finally, write out the new precursor concentrations, as well as the mesh, to the existing transient_source.h5 file.
+
 
   // manage resources
   close_dataset(dnp_dataset);

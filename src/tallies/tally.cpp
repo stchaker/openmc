@@ -595,14 +595,6 @@ void Tally::set_scores(const vector<std::string>& scores)
           fatal_error("Cannot tally neutron density with an outgoing energy filter.");
     
       break;
-
-
-    case SCORE_PRECURSORS:
-      if(settings::num_neutrons_time_slice == 0){
-        fatal_error("Cannot tally precursors without a time-slice source of neutrons.");        
-      }
-
-      break;
     }
 
 

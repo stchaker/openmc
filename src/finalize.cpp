@@ -68,7 +68,7 @@ int openmc_finalize()
     openmc_simulation_finalize();
 
   // Check and modify time-dependent source if needed
-  if(simulation::time_slice_bank_written)
+  if(simulation::time_slice_bank_written and settings::create_transient_source)
     finalize_dmc_source();
 
   // Clear results
