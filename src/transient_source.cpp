@@ -4,12 +4,68 @@
 #include "hdf5.h"
 
 #include<iostream>
+#include<cstring>
 namespace openmc{
 namespace simulation{
 SharedArray<SourceSite> time_slice_bank;
 double max_track_segment_time {0.0}; 
 bool time_slice_bank_written = false; 
 } // namespace simulation
+
+// function to check for both tallies existence once the file is opened, and to return fatal errors if they do not
+void check_tally_exists(hid_t obj_id) {
+  // first check to ensure the tally data exists 
+  const std::string path_to_tally1 = "/tallies/tally 1";
+  const std::string path_to_tally2 = "/tallies/tally 2";
+
+  if(!object_exists(obj_id, path_to_tally1.c_str()))
+    fatal_error("Delayed Neutron Precursor tally was not set, the transient source cannot be constructed!");
+
+  if(!object_exists(obj_id, path_to_tally2.c_str()))
+    fatal_error("The neutron concentration tally was not set, the transient source cannot be constructed!");
+}
+
+// function to check if the tallies are of the correct type, if not, return a fatal error
+void check_correct_tallies(hid_t obj_id_dnp, hid_t obj_id_neutron){
+  // first we need grab the appropriate datasets
+  hid_t data_dnp = H5Dopen2(obj_id_dnp, "score_bins", H5P_DEFAULT);
+  hid_t data_neutron = H5Dopen2(obj_id_neutron, "score_bins", H5P_DEFAULT);
+
+  // grab the datatypes of our datasets
+  hid_t datatype_dnp = H5Dget_type(data_dnp);
+  hid_t datatype_neutron = H5Dget_type(data_neutron);
+
+  // get the datasize of our data
+  hsize_t datasize_dnp = H5Tget_size(datatype_dnp);
+  hsize_t datasize_neutron = H5Tget_size(datatype_neutron);
+
+  // allocate string buffers
+  char* dnp_val = (char*)malloc(datasize_dnp+1);
+  char* neutron_val = (char*)malloc(datasize_neutron+1);
+
+  // read in the value
+  H5Dread(data_dnp, datatype_dnp, H5S_ALL, H5S_ALL, H5P_DEFAULT, dnp_val);
+  H5Dread(data_neutron, datatype_neutron, H5S_ALL, H5S_ALL, H5P_DEFAULT, neutron_val);
+
+  // add null terminator
+  dnp_val[datasize_dnp] = '\0';
+  neutron_val[datasize_neutron] = '\0';
+
+  // perform checks and return with fatal errors if needed
+  if(strcmp(dnp_val, "precursors") != 0)
+    fatal_error("The first tally must be set to precursor scoring in order to generate the transient source!");
+
+  if(strcmp(neutron_val, "neutron-density") != 0)
+    fatal_error("The second tally must be set to neutron density scoring in order to generate the transient source!");
+
+  // free memory and close HDF5 components
+  free(dnp_val);
+  free(neutron_val);
+  H5Dclose(data_dnp);
+  H5Dclose(data_neutron);
+  H5Tclose(datatype_dnp);
+  H5Tclose(datatype_neutron);
+}
 
 // returns the size of the timeslice bank written out during the simulation
 const size_t calculate_timeslice_size() {
@@ -57,6 +113,7 @@ void read_tally_data(hid_t obj_id, hsize_t* dims, const int ndims, double* data)
   H5Sclose(d_space);
 }
 
+// function to create the dnp/neutron ratios needed for source normalization
 vector<double> create_dnp_neutron_ratios(const vector<double>& dnps, const vector<double>& neutrons) {
   vector<double> ratios(dnps.size());
   int neutron_counter = 0;
@@ -82,9 +139,15 @@ void finalize_dmc_source(){
   const std::string filename = "dmc_statepoint.h5";
   hid_t file_id = file_open(filename, 'r', false);
 
-  //get precursor and neutron group handles
+  // check for the existence of the necessary tallies
+  check_tally_exists(file_id);
+
+  // get precursor and neutron group handles
   hid_t dnp_data = open_group(file_id, "/tallies/tally 1");
   hid_t neutron_data = open_group(file_id, "/tallies/tally 2");
+
+  // check that the tallies are scoring the correct properties
+  check_correct_tallies(dnp_data, neutron_data);
 
   // open result datasets of each tally
   hid_t dnp_dataset = open_dataset(dnp_data, "results");
