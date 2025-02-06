@@ -40,11 +40,13 @@ vector<double> create_dnp_neutron_ratios(const vector<double>& dnps, const vecto
 
 vector<double> create_neutron_pdf(const vector<double>& neutrons); // function to create pdf of neutron values in our domain
 
-const vector<double> calculate_normalized_precursors(const vector<double>& ratios, const vector<double>& pdf); // function to create the normalized precursor concentrations for our problem
+vector<double> calculate_normalized_precursors(const vector<double>& ratios, const vector<double>& pdf); // function to create the normalized precursor concentrations for our problem
 
 void write_out_precursors(const vector<double>& precursors); // function to write normalized precursor concentrations to the source file
 
 void write_out_mesh(hid_t statepoint_file); // function to copy over precursor mesh from keff run to transient source file. 
+
+//void print_vec(const vector<double>& vec);
 
 void finalize_transient_source(); // function to generate the transient_source.h5 file for use in dynamic simulation runs.
 

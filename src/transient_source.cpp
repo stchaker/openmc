@@ -1,6 +1,7 @@
 #include "openmc/transient_source.h"
 #include "openmc/source.h"
 #include "openmc/hdf5_interface.h"
+
 #include "hdf5.h"
 
 #include<iostream>
@@ -133,7 +134,7 @@ vector<double> create_neutron_pdf(const vector<double>& neutrons){
 }
 
 // function to use the dnp/n ratios and pdf to create the problem normalized precursor concentrations
-const vector<double> calculate_normalized_precursors(const vector<double>& ratios, const vector<double>& pdf){
+vector<double> calculate_normalized_precursors(const vector<double>& ratios, const vector<double>& pdf){
   vector<double> normalized_precursors; 
   constexpr int num_delayed_groups = 6;
   int neutron_counter = 0;
@@ -183,6 +184,14 @@ void write_out_mesh(hid_t statepoint_file){
   file_close(source_file); 
 }
 
+/*void print_vec(const vector<double>& vec){
+  for(double value : vec ){
+    std::cout << value << " ";
+  }
+  std::cout << '\n';
+}
+*/
+
 // routine to finalize the transient_source.h5 file needed for dynamic simulation
 void finalize_transient_source(){
   // dataspace dimensions
@@ -230,11 +239,22 @@ void finalize_transient_source(){
   vector<double> neutron_pdf = create_neutron_pdf(neutron_tally_results);
 
   // multiply the values of the pdf by the value of the number of neutrons in the time slice, then multiply this by the ratio vector
-  for(double value : neutron_pdf){
-    value *= settings::num_neutrons_time_slice; 
+  for(int i=0; i<neutron_pdf.size(); i++){
+    neutron_pdf[i] *= settings::num_neutrons_time_slice;
   }
 
-  const vector<double> finalized_dnps = calculate_normalized_precursors(dnp_neutron_ratio, neutron_pdf);
+  vector<double> finalized_dnps = calculate_normalized_precursors(dnp_neutron_ratio, neutron_pdf);
+
+  double dnp_sum = 0.0;
+  for (double value : finalized_dnps){
+    dnp_sum += value;
+  }
+
+  double ratio = (dnp_sum / settings::num_neutrons_time_slice);
+  // For physics debugging purposes
+  write_message(1, "The starting neutron population for the transient run is: {}", settings::num_neutrons_time_slice);
+  write_message(1, "The sum of the normalized precursor concentrations across all families is: {}", dnp_sum);
+  write_message(1, "The ratio of DNPs to Neutrons is therefore: {}", ratio);
 
   // Write out the new precursor concentrations, as well as the mesh, to the existing transient_source.h5 file.
   write_out_precursors(finalized_dnps);
