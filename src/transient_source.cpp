@@ -185,8 +185,13 @@ void write_out_mesh(hid_t statepoint_file){
 
 // routine to finalize the transient_source.h5 file needed for dynamic simulation
 void finalize_transient_source(){
-  // constant expressions
+  // dataspace dimensions
   constexpr int ndims = 3;
+
+  // error out if no time_slice source
+  if(settings::num_neutrons_time_slice == 0){
+    fatal_error("A time-slice neutron source must be used to construct the transient source!");
+  }
 
   // open transient statepoint file
   const std::string filename = "transient_statepoint.h5";
