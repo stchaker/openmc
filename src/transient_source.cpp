@@ -133,7 +133,7 @@ vector<double> create_neutron_pdf(const vector<double>& neutrons){
 }
 
 // function to use the dnp/n ratios and pdf to create the problem normalized precursor concentrations
-vector<double> calculate_normalized_precursors(const vector<double>& ratios, const vector<double>& pdf){
+const vector<double> calculate_normalized_precursors(const vector<double>& ratios, const vector<double>& pdf){
   vector<double> normalized_precursors; 
   constexpr int num_delayed_groups = 6;
   int neutron_counter = 0;
@@ -146,14 +146,51 @@ vector<double> calculate_normalized_precursors(const vector<double>& ratios, con
   return normalized_precursors;
 }
 
-// routine to create the dmc_startup.h5 file needed for dmc simulation
-void finalize_dmc_source(){
+// function to write normalized precursors to the transient source file.
+void write_out_precursors(const vector<double>& precursors){
+  // load the source file 
+  const std::string sourcefile = "transient_source.h5";
+  hid_t source_file = file_open(sourcefile, 'a', false);
+
+  // Create the dataspace for our 1D vector of precursor concentrations
+  constexpr int ndims = 1;
+  const hsize_t dims = {precursors.size()}; 
+
+  hid_t prec_dataspace = H5Screate_simple(ndims, &dims, NULL);
+
+  // Create the dataset
+  hid_t prec_dataset = H5Dcreate(source_file, "/precursor_concentrations", H5T_NATIVE_DOUBLE, prec_dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+  // Write the dataset
+  H5Dwrite(prec_dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, precursors.data());
+
+  // Close managed resources 
+  H5Sclose(prec_dataspace);
+  H5Dclose(prec_dataset);
+  file_close(source_file); 
+}
+
+//function to write out the mesh to the transient source file.
+void write_out_mesh(hid_t statepoint_file){
+  // load the source file
+  const std::string filename = "transient_source.h5";
+  hid_t source_file = file_open(filename, 'a', false);
+
+  // get the mesh from the statepoint and copy it to the transient_source file
+  H5Ocopy(statepoint_file, "/tallies/meshes/mesh 2", source_file, "/prec_mesh", H5P_DEFAULT, H5P_DEFAULT);
+
+  // close the opened source file
+  file_close(source_file); 
+}
+
+// routine to finalize the transient_source.h5 file needed for dynamic simulation
+void finalize_transient_source(){
   // constant expressions
   constexpr int ndims = 3;
 
   // open transient statepoint file
   const std::string filename = "transient_statepoint.h5";
-  hid_t file_id = file_open(filename, 'a', false);
+  hid_t file_id = file_open(filename, 'r', false);
 
   // check for the existence of the necessary tallies
   check_tally_exists(file_id);
@@ -192,18 +229,19 @@ void finalize_dmc_source(){
     value *= settings::num_neutrons_time_slice; 
   }
 
-  vector<double> finalized_dnps = calculate_normalized_precursors(dnp_neutron_ratio, neutron_pdf);
+  const vector<double> finalized_dnps = calculate_normalized_precursors(dnp_neutron_ratio, neutron_pdf);
 
-  // Finally, write out the new precursor concentrations, as well as the mesh, to the existing transient_source.h5 file.
+  // Write out the new precursor concentrations, as well as the mesh, to the existing transient_source.h5 file.
+  write_out_precursors(finalized_dnps);
+  write_out_mesh(file_id);
 
-
-  // manage resources
+  // manage HDF5 resources
   close_dataset(dnp_dataset);
   close_dataset(neutron_dataset);
   close_group(dnp_data);
   close_group(neutron_data);
 
-  // close the file
+  // close the statepoint file
   file_close(file_id); 
 }
 } // namespace openmc 
