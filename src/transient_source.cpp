@@ -189,7 +189,7 @@ void finalize_transient_source(){
   constexpr int ndims = 3;
 
   // error out if no time_slice source
-  if(settings::num_neutrons_time_slice == 0){
+  if(!simulation::time_slice_bank_written){
     fatal_error("A time-slice neutron source must be used to construct the transient source!");
   }
 
