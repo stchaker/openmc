@@ -242,6 +242,9 @@ void finalize_transient_source(){
   close_group(neutron_data);
 
   // close the statepoint file
-  file_close(file_id); 
+  file_close(file_id);
+
+  // print message indicating that the transient source was created succesfully
+  write_message(1, "The transient_source.h5 source file was created succesfully!");  
 }
 } // namespace openmc 
