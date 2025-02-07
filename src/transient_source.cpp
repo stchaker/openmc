@@ -1,33 +1,39 @@
 #include "openmc/transient_source.h"
-#include "openmc/source.h"
 #include "openmc/hdf5_interface.h"
+#include "openmc/source.h"
 
 #include "hdf5.h"
 
-#include<iostream>
-#include<cstring>
-namespace openmc{
-namespace simulation{
+#include <cstring>
+#include <iostream>
+namespace openmc {
+namespace simulation {
 SharedArray<SourceSite> time_slice_bank;
-double max_track_segment_time {0.0}; 
-bool time_slice_bank_written = false; 
+double max_track_segment_time {0.0};
+bool time_slice_bank_written = false;
 } // namespace simulation
 
-// function to check for both tallies existence once the file is opened, and to return fatal errors if they do not
-void check_tally_exists(hid_t obj_id) {
-  // first check to ensure the tally data exists 
+// function to check for both tallies existence once the file is opened, and to
+// return fatal errors if they do not
+void check_tally_exists(hid_t obj_id)
+{
+  // first check to ensure the tally data exists
   const std::string path_to_tally1 = "/tallies/tally 1";
   const std::string path_to_tally2 = "/tallies/tally 2";
 
-  if(!object_exists(obj_id, path_to_tally1.c_str()))
-    fatal_error("Delayed Neutron Precursor tally was not set, the transient source cannot be constructed!");
+  if (!object_exists(obj_id, path_to_tally1.c_str()))
+    fatal_error("Delayed Neutron Precursor tally was not set, the transient "
+                "source cannot be constructed!");
 
-  if(!object_exists(obj_id, path_to_tally2.c_str()))
-    fatal_error("The neutron concentration tally was not set, the transient source cannot be constructed!");
+  if (!object_exists(obj_id, path_to_tally2.c_str()))
+    fatal_error("The neutron concentration tally was not set, the transient "
+                "source cannot be constructed!");
 }
 
-// function to check if the tallies are of the correct type, if not, return a fatal error
-void check_correct_tallies(hid_t obj_id_dnp, hid_t obj_id_neutron){
+// function to check if the tallies are of the correct type, if not, return a
+// fatal error
+void check_correct_tallies(hid_t obj_id_dnp, hid_t obj_id_neutron)
+{
   // first we need grab the appropriate datasets
   hid_t data_dnp = H5Dopen2(obj_id_dnp, "score_bins", H5P_DEFAULT);
   hid_t data_neutron = H5Dopen2(obj_id_neutron, "score_bins", H5P_DEFAULT);
@@ -41,23 +47,26 @@ void check_correct_tallies(hid_t obj_id_dnp, hid_t obj_id_neutron){
   hsize_t datasize_neutron = H5Tget_size(datatype_neutron);
 
   // allocate string buffers
-  char* dnp_val = (char*)malloc(datasize_dnp+1);
-  char* neutron_val = (char*)malloc(datasize_neutron+1);
+  char* dnp_val = (char*)malloc(datasize_dnp + 1);
+  char* neutron_val = (char*)malloc(datasize_neutron + 1);
 
   // read in the value
   H5Dread(data_dnp, datatype_dnp, H5S_ALL, H5S_ALL, H5P_DEFAULT, dnp_val);
-  H5Dread(data_neutron, datatype_neutron, H5S_ALL, H5S_ALL, H5P_DEFAULT, neutron_val);
+  H5Dread(
+    data_neutron, datatype_neutron, H5S_ALL, H5S_ALL, H5P_DEFAULT, neutron_val);
 
   // add null terminator
   dnp_val[datasize_dnp] = '\0';
   neutron_val[datasize_neutron] = '\0';
 
   // perform checks and return with fatal errors if needed
-  if(strcmp(dnp_val, "precursors") != 0)
-    fatal_error("The first tally must be set to precursor scoring in order to generate the transient source!");
+  if (strcmp(dnp_val, "precursors") != 0)
+    fatal_error("The first tally must be set to precursor scoring in order to "
+                "generate the transient source!");
 
-  if(strcmp(neutron_val, "neutron-density") != 0)
-    fatal_error("The second tally must be set to neutron density scoring in order to generate the transient source!");
+  if (strcmp(neutron_val, "neutron-density") != 0)
+    fatal_error("The second tally must be set to neutron density scoring in "
+                "order to generate the transient source!");
 
   // free memory and close HDF5 components
   free(dnp_val);
@@ -69,21 +78,23 @@ void check_correct_tallies(hid_t obj_id_dnp, hid_t obj_id_neutron){
 }
 
 // returns the size of the 1D array tallies
-void get_tally_shape(hid_t obj_id, hsize_t* dims) {
+void get_tally_shape(hid_t obj_id, hsize_t* dims)
+{
   hid_t d_space;
-  d_space = H5Dget_space(obj_id); 
+  d_space = H5Dget_space(obj_id);
   H5Sget_simple_extent_dims(d_space, dims, nullptr);
-  H5Sclose(d_space);  
+  H5Sclose(d_space);
 }
 
-// reads tally results to a buffer of data 
-void read_tally_data(hid_t obj_id, hsize_t* dims, const int ndims, double* data) {
+// reads tally results to a buffer of data
+void read_tally_data(hid_t obj_id, hsize_t* dims, const int ndims, double* data)
+{
   // set the dataspace and hyperslab parameters
   hid_t d_space = H5Dget_space(obj_id);
   hsize_t start[3], count[3], stride[3], block[3];
 
-  //allocate hyperslab components
-  for(int i=0; i<ndims; i++){
+  // allocate hyperslab components
+  for (int i = 0; i < ndims; i++) {
     start[i] = 0;
     count[i] = 1;
     block[i] = 1;
@@ -98,7 +109,7 @@ void read_tally_data(hid_t obj_id, hsize_t* dims, const int ndims, double* data)
   hid_t memory_space = H5Screate_simple(1, count, NULL);
 
   // read in the tally information to the buffer
-  H5Dread(obj_id, H5T_IEEE_F64LE, memory_space, d_space, H5P_DEFAULT, data); 
+  H5Dread(obj_id, H5T_IEEE_F64LE, memory_space, d_space, H5P_DEFAULT, data);
 
   // close dataspaces
   H5Sclose(memory_space);
@@ -106,40 +117,46 @@ void read_tally_data(hid_t obj_id, hsize_t* dims, const int ndims, double* data)
 }
 
 // function to create the dnp/neutron ratios needed for source normalization
-vector<double> create_dnp_neutron_ratios(const vector<double>& dnps, const vector<double>& neutrons) {
+vector<double> create_dnp_neutron_ratios(
+  const vector<double>& dnps, const vector<double>& neutrons)
+{
   vector<double> ratios(dnps.size());
   int neutron_counter = 0;
   constexpr int num_delayed_groups = 6;
-  for(int i=0; i<dnps.size(); i++){
-    if(i%num_delayed_groups == 0 and i!= 0){
+  for (int i = 0; i < dnps.size(); i++) {
+    if (i % num_delayed_groups == 0 and i != 0) {
       neutron_counter++;
     }
     ratios[i] = dnps[i] / neutrons[neutron_counter];
   }
-  return ratios; 
+  return ratios;
 }
 
-// create a normalized discrete pdf of neutron concentrations, normalized to 1. 
-vector<double> create_neutron_pdf(const vector<double>& neutrons){
+// create a normalized discrete pdf of neutron concentrations, normalized to 1.
+vector<double> create_neutron_pdf(const vector<double>& neutrons)
+{
   vector<double> pdf;
   double sum = 0.0;
-  for(double value : neutrons){
+  for (double value : neutrons) {
     sum += value;
   }
-  for(int i=0; i<neutrons.size(); i++){
+  for (int i = 0; i < neutrons.size(); i++) {
     double val = (neutrons[i] / sum);
     pdf.emplace_back(val);
   }
   return pdf;
 }
 
-// function to use the dnp/n ratios and pdf to create the problem normalized precursor concentrations
-vector<double> calculate_normalized_precursors(const vector<double>& ratios, const vector<double>& pdf){
-  vector<double> normalized_precursors; 
+// function to use the dnp/n ratios and pdf to create the problem normalized
+// precursor concentrations
+vector<double> calculate_normalized_precursors(
+  const vector<double>& ratios, const vector<double>& pdf)
+{
+  vector<double> normalized_precursors;
   constexpr int num_delayed_groups = 6;
   int neutron_counter = 0;
-  for(int i=0; i<ratios.size(); i++){
-    if(i%num_delayed_groups == 0 and i!= 0){
+  for (int i = 0; i < ratios.size(); i++) {
+    if (i % num_delayed_groups == 0 and i != 0) {
       neutron_counter++;
     }
     normalized_precursors.emplace_back(ratios[i] * pdf[neutron_counter]);
@@ -148,40 +165,45 @@ vector<double> calculate_normalized_precursors(const vector<double>& ratios, con
 }
 
 // function to write normalized precursors to the transient source file.
-void write_out_precursors(const vector<double>& precursors){
-  // load the source file 
+void write_out_precursors(const vector<double>& precursors)
+{
+  // load the source file
   const std::string sourcefile = "transient_source.h5";
   hid_t source_file = file_open(sourcefile, 'a', false);
 
   // Create the dataspace for our 1D vector of precursor concentrations
   constexpr int ndims = 1;
-  const hsize_t dims = {precursors.size()}; 
+  const hsize_t dims = {precursors.size()};
 
   hid_t prec_dataspace = H5Screate_simple(ndims, &dims, NULL);
 
   // Create the dataset
-  hid_t prec_dataset = H5Dcreate(source_file, "/precursor_concentrations", H5T_NATIVE_DOUBLE, prec_dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  hid_t prec_dataset = H5Dcreate(source_file, "/precursor_concentrations",
+    H5T_NATIVE_DOUBLE, prec_dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   // Write the dataset
-  H5Dwrite(prec_dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, precursors.data());
+  H5Dwrite(prec_dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+    precursors.data());
 
-  // Close managed resources 
+  // Close managed resources
   H5Sclose(prec_dataspace);
   H5Dclose(prec_dataset);
-  file_close(source_file); 
+  file_close(source_file);
 }
 
-//function to write out the mesh to the transient source file.
-void write_out_mesh(hid_t statepoint_file){
+// function to write out the mesh to the transient source file.
+void write_out_mesh(hid_t statepoint_file)
+{
   // load the source file
   const std::string filename = "transient_source.h5";
   hid_t source_file = file_open(filename, 'a', false);
 
   // get the mesh from the statepoint and copy it to the transient_source file
-  H5Ocopy(statepoint_file, "/tallies/meshes/mesh 2", source_file, "/prec_mesh", H5P_DEFAULT, H5P_DEFAULT);
+  H5Ocopy(statepoint_file, "/tallies/meshes/mesh 1", source_file, "/prec_mesh",
+    H5P_DEFAULT, H5P_DEFAULT);
 
   // close the opened source file
-  file_close(source_file); 
+  file_close(source_file);
 }
 
 /*void print_vec(const vector<double>& vec){
@@ -192,14 +214,17 @@ void write_out_mesh(hid_t statepoint_file){
 }
 */
 
-// routine to finalize the transient_source.h5 file needed for dynamic simulation
-void finalize_transient_source(){
+// routine to finalize the transient_source.h5 file needed for dynamic
+// simulation
+void finalize_transient_source()
+{
   // dataspace dimensions
   constexpr int ndims = 3;
 
   // error out if no time_slice source
-  if(!simulation::time_slice_bank_written){
-    fatal_error("A time-slice neutron source must be used to construct the transient source!");
+  if (!simulation::time_slice_bank_written) {
+    fatal_error("A time-slice neutron source must be used to construct the "
+                "transient source!");
   }
 
   // open transient statepoint file
@@ -218,45 +243,55 @@ void finalize_transient_source(){
 
   // open result datasets of each tally
   hid_t dnp_dataset = open_dataset(dnp_data, "results");
-  hid_t neutron_dataset = open_dataset(neutron_data, "results"); 
+  hid_t neutron_dataset = open_dataset(neutron_data, "results");
 
   // get the dimension size of the tally
-  hsize_t dnp_dims[ndims]; 
+  hsize_t dnp_dims[ndims];
   hsize_t neutron_dims[ndims];
   get_tally_shape(neutron_dataset, neutron_dims);
   get_tally_shape(dnp_dataset, dnp_dims);
 
   // read in tally data
-  vector<double> dnp_tally_results(dnp_dims[0]); 
+  vector<double> dnp_tally_results(dnp_dims[0]);
   vector<double> neutron_tally_results(neutron_dims[0]);
   read_tally_data(dnp_dataset, dnp_dims, ndims, dnp_tally_results.data());
-  read_tally_data(neutron_dataset, neutron_dims, ndims, neutron_tally_results.data());
+  read_tally_data(
+    neutron_dataset, neutron_dims, ndims, neutron_tally_results.data());
 
   // create a vector of DNP/Neutron concentration ratios
-  vector<double> dnp_neutron_ratio = create_dnp_neutron_ratios(dnp_tally_results, neutron_tally_results);
+  vector<double> dnp_neutron_ratio =
+    create_dnp_neutron_ratios(dnp_tally_results, neutron_tally_results);
 
   // create a PDF discrete vector of neutron concentration across all mesh bins
   vector<double> neutron_pdf = create_neutron_pdf(neutron_tally_results);
 
-  // multiply the values of the pdf by the value of the number of neutrons in the time slice, then multiply this by the ratio vector
-  for(int i=0; i<neutron_pdf.size(); i++){
+  // multiply the values of the pdf by the value of the number of neutrons in
+  // the time slice, then multiply this by the ratio vector
+  for (int i = 0; i < neutron_pdf.size(); i++) {
     neutron_pdf[i] *= settings::num_neutrons_time_slice;
   }
 
-  vector<double> finalized_dnps = calculate_normalized_precursors(dnp_neutron_ratio, neutron_pdf);
+  vector<double> finalized_dnps =
+    calculate_normalized_precursors(dnp_neutron_ratio, neutron_pdf);
 
   double dnp_sum = 0.0;
-  for (double value : finalized_dnps){
+  for (double value : finalized_dnps) {
     dnp_sum += value;
   }
 
   double ratio = (dnp_sum / settings::num_neutrons_time_slice);
   // For physics debugging purposes
-  write_message(1, "The starting neutron population for the transient run is: {}", settings::num_neutrons_time_slice);
-  write_message(1, "The sum of the normalized precursor concentrations across all families is: {}", dnp_sum);
+  write_message(1,
+    "The starting neutron population for the transient run is: {}",
+    settings::num_neutrons_time_slice);
+  write_message(1,
+    "The sum of the normalized precursor concentrations across all families "
+    "is: {}",
+    dnp_sum);
   write_message(1, "The ratio of DNPs to Neutrons is therefore: {}", ratio);
 
-  // Write out the new precursor concentrations, as well as the mesh, to the existing transient_source.h5 file.
+  // Write out the new precursor concentrations, as well as the mesh, to the
+  // existing transient_source.h5 file.
   write_out_precursors(finalized_dnps);
   write_out_mesh(file_id);
 
@@ -270,6 +305,7 @@ void finalize_transient_source(){
   file_close(file_id);
 
   // print message indicating that the transient source was created succesfully
-  write_message(1, "The transient_source.h5 source file was created succesfully!");  
+  write_message(
+    1, "The transient_source.h5 source file was created succesfully!");
 }
-} // namespace openmc 
+} // namespace openmc
