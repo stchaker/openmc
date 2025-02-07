@@ -280,6 +280,8 @@ void finalize_transient_source()
   }
 
   double ratio = (dnp_sum / settings::num_neutrons_time_slice);
+
+  /*
   // For physics debugging purposes
   write_message(1,
     "The starting neutron population for the transient run is: {}",
@@ -289,7 +291,9 @@ void finalize_transient_source()
     "is: {}",
     dnp_sum);
   write_message(1, "The ratio of DNPs to Neutrons is therefore: {}", ratio);
+  */
 
+ 
   // Write out the new precursor concentrations, as well as the mesh, to the
   // existing transient_source.h5 file.
   write_out_precursors(finalized_dnps);
