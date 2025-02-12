@@ -260,6 +260,11 @@ void Particle::event_advance()
           site.r += xi * distance * this->u(); 
           site.time += xi * dt;
 
+          // If creating source sites for a transient run, set time of particle to 0
+          if(settings::create_transient_source){
+            site.time = 0.0;
+          }
+
           // Add the svaed source site to the bank
           simulation::time_slice_bank.thread_safe_append(site);
         }
