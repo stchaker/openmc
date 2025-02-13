@@ -223,7 +223,7 @@ void finalize_transient_source()
 
   // error out if no time_slice source
   if (!simulation::time_slice_bank_written) {
-    fatal_error("A time-slice neutron source must be used to construct the "
+    fatal_error("A time-slice neutron source must be used to normalize the "
                 "transient source!");
   }
 
