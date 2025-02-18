@@ -46,7 +46,9 @@ void write_out_precursors(const vector<double>& precursors); // function to writ
 
 void write_out_mesh(hid_t statepoint_file); // function to copy over precursor mesh from keff run to transient source file. 
 
-//void print_vec(const vector<double>& vec);
+vector<double> read_precursor_concentrations(const std::string& filename); // function to read into memory the precursor concentrations from the transient_source.h5 file
+
+vector<SourceSite> read_timeslice_source(const std::string& filename);
 
 void finalize_transient_source(); // function to generate the transient_source.h5 file for use in dynamic simulation runs.
 

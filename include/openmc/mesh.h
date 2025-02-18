@@ -446,6 +446,7 @@ public:
   // Constructors
   RectilinearMesh() = default;
   RectilinearMesh(pugi::xml_node node);
+  RectilinearMesh(vector<double>& x, vector<double>& y, vector<double>& z);
 
   // Overridden methods
   int get_index_in_direction(double r, int i) const override;
@@ -488,6 +489,7 @@ public:
   // Constructors
   CylindricalMesh() = default;
   CylindricalMesh(pugi::xml_node node);
+  CylindricalMesh(vector<double>& r, vector<double>& phi, vector<double>& z, Position& origin);
 
   // Overridden methods
   virtual MeshIndex get_indices(Position r, bool& in_mesh) const override;
@@ -552,6 +554,7 @@ public:
   // Constructors
   SphericalMesh() = default;
   SphericalMesh(pugi::xml_node node);
+  SphericalMesh(vector<double>& r, vector<double>& theta, vector<double>& phi, Position& origin); 
 
   // Overridden methods
   virtual MeshIndex get_indices(Position r, bool& in_mesh) const override;

@@ -1038,6 +1038,18 @@ RectilinearMesh::RectilinearMesh(pugi::xml_node node) : StructuredMesh {node}
   }
 }
 
+RectilinearMesh::RectilinearMesh(vector<double>& x, vector<double>& y, vector<double>& z){
+  n_dimension_ = 3;
+
+  grid_[0] = x;
+  grid_[1] = y;
+  grid_[2] = z; 
+
+  if (int err = set_grid()) {
+    fatal_error(openmc_err_msg);
+  }
+}
+
 const std::string RectilinearMesh::mesh_type = "rectilinear";
 
 std::string RectilinearMesh::get_mesh_type() const
@@ -1174,6 +1186,19 @@ CylindricalMesh::CylindricalMesh(pugi::xml_node node)
   origin_ = get_node_position(node, "origin");
 
   if (int err = set_grid()) {
+    fatal_error(openmc_err_msg);
+  }
+}
+
+CylindricalMesh::CylindricalMesh(vector<double>& r, vector<double>& phi, vector<double>& z, Position& origin ) : PeriodicStructuredMesh {}
+{
+  n_dimension_ = 3;
+  grid_[0] = r;
+  grid_[1] = phi;
+  grid_[2] = z;
+  origin_ = origin; 
+
+  if (int err = set_grid()){
     fatal_error(openmc_err_msg);
   }
 }
@@ -1460,6 +1485,20 @@ SphericalMesh::SphericalMesh(pugi::xml_node node)
 
   if (int err = set_grid()) {
     fatal_error(openmc_err_msg);
+  }
+}
+
+SphericalMesh::SphericalMesh(vector<double>& r, vector<double>& theta, vector<double>& phi, Position& origin) : PeriodicStructuredMesh {} 
+{
+  n_dimension_ = 3;
+
+  grid_[0] = r;
+  grid_[1] = theta;
+  grid_[2] = phi;
+  origin_ = origin; 
+
+  if (int err = set_grid()) {
+    fatal_error(openmc_err_msg); 
   }
 }
 

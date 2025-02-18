@@ -206,16 +206,41 @@ void write_out_mesh(hid_t statepoint_file)
   file_close(source_file);
 }
 
-/*void print_vec(const vector<double>& vec){
-  for(double value : vec ){
-    std::cout << value << " ";
-  }
-  std::cout << '\n';
-}
-*/
+// function to read in the precursor vector from the transient_source.h5 file
+vector<double> read_precursor_concentrations(const std::string& sourcefile) {
 
-// routine to finalize the transient_source.h5 file needed for dynamic
-// simulation
+  // read the source file and get the dataspace
+  hid_t file_obj = file_open(sourcefile, 'r', false);
+  hid_t precursor_data = H5Dopen2(file_obj, "precursor_concentrations", H5P_DEFAULT);
+
+  // get the dimensions
+  hid_t precursor_dataspace = H5Dget_space(precursor_data); 
+  constexpr int ndims = 1;
+  hsize_t dims[ndims];
+  H5Sget_simple_extent_dims(precursor_dataspace, dims, NULL);
+  
+  // read data to vector
+  vector<double> precursor_concentrations(dims[0]);
+  H5Dread(precursor_data, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, precursor_concentrations.data());
+  
+  // free memory
+  H5Sclose(precursor_dataspace);
+  H5Dclose(precursor_data);
+  file_close(file_obj);
+
+  // return data
+  return precursor_concentrations; 
+}
+
+// function to get time-sliced particle sites from transient source
+vector<SourceSite> read_timeslice_source(const std::string& filename){
+  FileSource source = FileSource(filename);
+  vector<SourceSite> sites = source.get_sites_from_file();
+  return sites; 
+}
+
+
+// routine to finalize the transient_source.h5 file needed for dynamic simulation
 void finalize_transient_source()
 {
   // dataspace dimensions
