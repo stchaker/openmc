@@ -206,37 +206,93 @@ void write_out_mesh(hid_t statepoint_file)
   file_close(source_file);
 }
 
-// function to read in the precursor vector from the transient_source.h5 file
-vector<double> read_precursor_concentrations(const std::string& sourcefile) {
+// utility function to read in vector double values from the source file 
+vector<double> read_data(const std::string& sourcefile, const std::string& attr, bool within_mesh) {
 
-  // read the source file and get the dataspace
+  // read the source file and get the dataset 
   hid_t file_obj = file_open(sourcefile, 'r', false);
-  hid_t precursor_data = H5Dopen2(file_obj, "precursor_concentrations", H5P_DEFAULT);
-
+  hid_t dataset = 0;
+  hid_t prec_group = 0;
+  if (within_mesh){
+    prec_group = H5Gopen2(file_obj, "prec_mesh", H5P_DEFAULT);
+    dataset = H5Dopen2(prec_group, attr.c_str(), H5P_DEFAULT);
+  } else {
+    dataset = H5Dopen2(file_obj, attr.c_str(), H5P_DEFAULT);
+  }
   // get the dimensions
-  hid_t precursor_dataspace = H5Dget_space(precursor_data); 
-  constexpr int ndims = 1;
+  hid_t dspace = H5Dget_space(dataset); 
+  constexpr int ndims = 1; // assume we have a 1D vector of data to read
   hsize_t dims[ndims];
-  H5Sget_simple_extent_dims(precursor_dataspace, dims, NULL);
+  H5Sget_simple_extent_dims(dspace, dims, NULL);
   
   // read data to vector
-  vector<double> precursor_concentrations(dims[0]);
-  H5Dread(precursor_data, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, precursor_concentrations.data());
+  vector<double> data(dims[0]);
+  H5Dread(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, data.data());
   
   // free memory
-  H5Sclose(precursor_dataspace);
-  H5Dclose(precursor_data);
+  H5Sclose(dspace);
+  if (within_mesh){
+    H5Gclose(prec_group); 
+  }
+  H5Dclose(dataset);
   file_close(file_obj);
 
   // return data
-  return precursor_concentrations; 
+  return data;
+}
+
+// function to read in the precursor vector from the transient_source.h5 file
+vector<double> read_precursor_concentrations(const std::string& sourcefile) {
+  const std::string group_name = "precursor_concentrations";
+  vector<double> prec_concentrations = read_data(sourcefile, group_name, false);
+  return prec_concentrations; 
 }
 
 // function to get time-sliced particle sites from transient source
-vector<SourceSite> read_timeslice_source(const std::string& filename){
-  FileSource source = FileSource(filename);
+vector<SourceSite> read_timeslice_source(const std::string& sourcefile){
+  FileSource source = FileSource(sourcefile);
   vector<SourceSite> sites = source.get_sites_from_file();
   return sites; 
+}
+
+// get the type of mesh from the prec_mesh group in the transient_source.h5 file
+const std::string get_mesh_type(const std::string& sourcefile){
+  // read in the dataset to determine the type
+  hid_t file_id = file_open(sourcefile, 'r', false);
+  hid_t mesh_group = H5Gopen2(file_id, "prec_mesh", H5P_DEFAULT);
+  hid_t mesh_type = H5Dopen2(mesh_group, "type", H5P_DEFAULT);
+
+  // get dimensions and allocate buffers
+  hid_t mesh_datatype = H5Dget_type(mesh_type);
+  hsize_t mesh_datasize = H5Tget_size(mesh_datatype);
+  char* type_of_mesh = (char*)malloc(mesh_datasize + 1);
+
+  // read in the value
+  H5Dread(mesh_type, mesh_datatype, H5S_ALL, H5S_ALL, H5P_DEFAULT, type_of_mesh);
+  type_of_mesh[mesh_datasize] = '\0';
+
+  const std::string mesh_type_string = std::string(type_of_mesh);
+
+  // free memory
+  free(type_of_mesh);
+  H5Dclose(mesh_type);
+  H5Tclose(mesh_datatype);
+  H5Gclose(mesh_group);
+  file_close(file_id); 
+
+  // return the value
+  return mesh_type_string; 
+}
+
+// function to get a spherical precursor mesh from file
+SphericalMesh get_spherical_precmesh(const std::string& sourcefile) {
+  vector<double> r = read_data(sourcefile, "r_grid", true);
+  vector<double> theta = read_data(sourcefile, "theta_grid", true);
+  vector<double> phi = read_data(sourcefile, "phi_grid", true);
+  array<double, 3> arr_origin = {0.0, 0.0, 0.0};
+  Position origin = arr_origin; 
+  SphericalMesh precursor_mesh = SphericalMesh(r, theta, phi, origin);
+  return precursor_mesh; 
 }
 
 

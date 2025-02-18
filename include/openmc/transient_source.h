@@ -6,6 +6,7 @@
 
 #include "openmc/particle.h"
 #include "openmc/shared_array.h"
+#include "mesh.h"
 #include "hdf5.h"
 
 namespace openmc {
@@ -46,9 +47,15 @@ void write_out_precursors(const vector<double>& precursors); // function to writ
 
 void write_out_mesh(hid_t statepoint_file); // function to copy over precursor mesh from keff run to transient source file. 
 
-vector<double> read_precursor_concentrations(const std::string& filename); // function to read into memory the precursor concentrations from the transient_source.h5 file
+vector<double> read_data(const std::string& sourcefile, const std::string& attr, bool within_mesh);
 
-vector<SourceSite> read_timeslice_source(const std::string& filename);
+vector<double> read_precursor_concentrations(const std::string& sourcefile); // function to read into memory the precursor concentrations from the transient_source.h5 file
+
+vector<SourceSite> read_timeslice_source(const std::string& sourcefile); // function to read into memory the initial set of SourceSites for the transient run.
+
+const std::string get_mesh_type(const std::string& sourcefile); // function to get the mesh type from the transient_source.h5 file.
+
+SphericalMesh get_spherical_precmesh(const std::string& sourcefile);
 
 void finalize_transient_source(); // function to generate the transient_source.h5 file for use in dynamic simulation runs.
 
