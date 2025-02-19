@@ -55,7 +55,12 @@ vector<SourceSite> read_timeslice_source(const std::string& sourcefile); // func
 
 const std::string get_mesh_type(const std::string& sourcefile); // function to get the mesh type from the transient_source.h5 file.
 
+// the following three functions are used to read in the precursor mesh depending on the mesh type 
 SphericalMesh get_spherical_precmesh(const std::string& sourcefile);
+
+CylindricalMesh get_cylindrical_precmesh(const std::string& sourcefile);
+
+RectilinearMesh get_rectilinear_precmesh(const std::string& sourcefile);
 
 void finalize_transient_source(); // function to generate the transient_source.h5 file for use in dynamic simulation runs.
 

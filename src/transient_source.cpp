@@ -284,7 +284,7 @@ const std::string get_mesh_type(const std::string& sourcefile){
   return mesh_type_string; 
 }
 
-// function to get a spherical precursor mesh from file
+// function to get a spherical precursor mesh from transient source file
 SphericalMesh get_spherical_precmesh(const std::string& sourcefile) {
   vector<double> r = read_data(sourcefile, "r_grid", true);
   vector<double> theta = read_data(sourcefile, "theta_grid", true);
@@ -295,6 +295,25 @@ SphericalMesh get_spherical_precmesh(const std::string& sourcefile) {
   return precursor_mesh; 
 }
 
+// function to get a cylindrical precursor mesh from transient source file
+CylindricalMesh get_cylindrical_precmesh(const std::string& sourcefile) {
+  vector<double> r = read_data(sourcefile, "r_grid", true);
+  vector<double> phi = read_data(sourcefile, "phi_grid", true);
+  vector<double> z = read_data(sourcefile, "z_grid", true);
+  array<double, 3> arr_origin = {0.0, 0.0, 0.0};
+  Position origin = arr_origin;
+  CylindricalMesh precursor_mesh = CylindricalMesh(r, phi, z, origin); 
+  return precursor_mesh; 
+}
+
+// function to get a rectilinear precursor mesh from transient source file
+RectilinearMesh get_rectilinear_precmesh(const std::string& sourcefile) {
+  vector<double> x = read_data(sourcefile, "x_grid", true);
+  vector<double> y = read_data(sourcefile, "y_grid", true);
+  vector<double> z = read_data(sourcefile, "z_grid", true);
+  RectilinearMesh precursor_mesh = RectilinearMesh(x,y,z);
+  return precursor_mesh; 
+}
 
 // routine to finalize the transient_source.h5 file needed for dynamic simulation
 void finalize_transient_source()
