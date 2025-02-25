@@ -323,6 +323,9 @@ class Settings:
         self._particles = None
         self._keff_trigger = None
 
+        # Alpha Eigenvalue initializer
+        self._alpha_initalizer = None
+
         # Energy mode subelement
         self._energy_mode = None
         self._max_order = None
@@ -402,6 +405,15 @@ class Settings:
 
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+    @property 
+    def alpha_initalizer(self) -> float:
+        return self._alpha_initalizer.value
+    
+    @alpha_initalizer.setter
+    def alpha_initalizer(self, alpha_initalizer: float):
+        cv.check_type('alpha_initalizer', alpha_initalizer, float)
+        self._alpha_initalizer = alpha_initalizer
 
     @property
     def run_mode(self) -> str:
@@ -1154,6 +1166,10 @@ class Settings:
                                  'unsupported by OpenMC')
 
         self._random_ray = random_ray
+        
+    def _create_alpha_initalizer_subelement(self, root):
+        elem = ET.SubElement(root, "alpha_initalizer")
+        elem.text = str(self._alpha_initalizer)
 
     def _create_run_mode_subelement(self, root):
         elem = ET.SubElement(root, "run_mode")
@@ -1602,6 +1618,11 @@ class Settings:
             self._max_write_lost_particles_from_xml_element(elem)
             self._generations_per_batch_from_xml_element(elem)
 
+    def _alpha_initalizer_from_xml_element(self, root):
+        text = get_text(root, "alpha_initalizer")
+        if text is not None:
+            self.alpha_initalizer = text
+
     def _run_mode_from_xml_element(self, root):
         text = get_text(root, 'run_mode')
         if text is not None:
@@ -1989,6 +2010,7 @@ class Settings:
         element = ET.Element("settings")
 
         self._create_run_mode_subelement(element)
+        self._create_alpha_initalizer_subelement(element)
         self._create_particles_subelement(element)
         self._create_batches_subelement(element)
         self._create_inactive_subelement(element)
@@ -2096,6 +2118,7 @@ class Settings:
         settings = cls()
         settings._eigenvalue_from_xml_element(elem)
         settings._run_mode_from_xml_element(elem)
+        settings._alpha_initalizer_from_xml_element(elem)
         settings._particles_from_xml_element(elem)
         settings._batches_from_xml_element(elem)
         settings._inactive_from_xml_element(elem)
