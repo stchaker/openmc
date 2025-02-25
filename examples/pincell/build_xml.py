@@ -64,7 +64,7 @@ settings.run_mode = "alpha eigenvalue"
 settings.batches = 100
 settings.inactive = 10
 settings.particles = 1000
-
+settings.alpha_initalizer = 0.0
 # Create an initial uniform spatial source distribution over fissionable zones
 lower_left = (-pitch / 2, -pitch / 2, -1)
 upper_right = (pitch / 2, pitch / 2, 1)

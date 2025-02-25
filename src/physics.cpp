@@ -220,7 +220,7 @@ void create_fission_sites(Particle& p, int i_nuclide, const Reaction& rx)
       if (idx == -1) {
         warning(
           "The shared fission bank is full. Additional fission sites created "
-          "in this generation will not be banked. Results may be "
+          "in this generation will not be banked.  may be "
           "non-deterministic.");
 
         // Decrement number of particle progeny as storage was unsuccessful.

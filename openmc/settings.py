@@ -1621,7 +1621,9 @@ class Settings:
     def _alpha_initalizer_from_xml_element(self, root):
         text = get_text(root, "alpha_initalizer")
         if text is not None:
-            self.alpha_initalizer = text
+            self.alpha_initalizer = float(text)
+        else:
+            self.alpha_initializer = 0.0
 
     def _run_mode_from_xml_element(self, root):
         text = get_text(root, 'run_mode')
