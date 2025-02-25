@@ -21,6 +21,7 @@ from .weight_windows import WeightWindows, WeightWindowGenerator
 class RunMode(Enum):
     EIGENVALUE = 'eigenvalue'
     FIXED_SOURCE = 'fixed source'
+    ALPHA = 'alpha eigenvalue'
     PLOT = 'plot'
     VOLUME = 'volume'
     PARTICLE_RESTART = 'particle restart'

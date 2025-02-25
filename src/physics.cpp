@@ -106,7 +106,7 @@ void sample_neutron_reaction(Particle& p)
 
   if (nuc->fissionable_ && p.neutron_xs(i_nuclide).fission > 0.0) {
     auto& rx = sample_fission(i_nuclide, p);
-    if (settings::run_mode == RunMode::EIGENVALUE) {
+    if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
       create_fission_sites(p, i_nuclide, rx);
     } else if (settings::run_mode == RunMode::FIXED_SOURCE &&
                settings::create_fission_neutrons) {
@@ -190,7 +190,11 @@ void create_fission_sites(Particle& p, int i_nuclide, const Reaction& rx)
 
   // Determine whether to place fission sites into the shared fission bank
   // or the secondary particle bank.
-  bool use_fission_bank = (settings::run_mode == RunMode::EIGENVALUE);
+  bool use_fission_bank = false;
+  if(settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA){
+    use_fission_bank = true;
+  }
+  //bool use_fission_bank = (settings::run_mode == RunMode::EIGENVALUE);
 
   // Counter for the number of fission sites successfully stored to the shared
   // fission bank or the secondary particle bank
@@ -631,7 +635,7 @@ void absorption(Particle& p, int i_nuclide)
     p.wgt() -= wgt_absorb;
 
     // Score implicit absorption estimate of keff
-    if (settings::run_mode == RunMode::EIGENVALUE) {
+    if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
       p.keff_tally_absorption() += wgt_absorb *
                                    p.neutron_xs(i_nuclide).nu_fission /
                                    p.neutron_xs(i_nuclide).absorption;
@@ -641,7 +645,7 @@ void absorption(Particle& p, int i_nuclide)
     if (p.neutron_xs(i_nuclide).absorption >
         prn(p.current_seed()) * p.neutron_xs(i_nuclide).total) {
       // Score absorption estimate of keff
-      if (settings::run_mode == RunMode::EIGENVALUE) {
+      if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
         p.keff_tally_absorption() += p.wgt() *
                                      p.neutron_xs(i_nuclide).nu_fission /
                                      p.neutron_xs(i_nuclide).absorption;
@@ -1177,6 +1181,8 @@ void sample_secondary_photons(Particle& p, int i_nuclide)
     // calculations", Proc. PHYSOR, Cambridge, UK, Mar 29-Apr 2, 2020.
     double wgt;
     if (settings::run_mode == RunMode::EIGENVALUE && !is_fission(rx->mt_)) {
+      wgt = simulation::keff * p.wgt();
+    } else if (settings::run_mode == RunMode::ALPHA && !is_fission(rx->mt_)) {
       wgt = simulation::keff * p.wgt();
     } else {
       wgt = p.wgt();

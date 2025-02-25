@@ -133,6 +133,8 @@ int openmc_simulation_init()
     if (settings::run_mode == RunMode::EIGENVALUE &&
         settings::solver_type == SolverType::MONTE_CARLO) {
       initialize_source();
+    } else if (settings::run_mode == RunMode::ALPHA && settings::solver_type == SolverType::MONTE_CARLO) {
+      initialize_source(); 
     }
   }
 
@@ -149,6 +151,14 @@ int openmc_simulation_init()
         header("K EIGENVALUE SIMULATION", 3);
       } else if (settings::solver_type == SolverType::RANDOM_RAY) {
         header("K EIGENVALUE SIMULATION (RANDOM RAY SOLVER)", 3);
+      }
+      if (settings::verbosity >= 7)
+        print_columns();
+    } else if (settings::run_mode == RunMode::ALPHA){
+      if (settings::solver_type == SolverType::MONTE_CARLO) {
+        header("ALPHA EIGENVALUE SIMULATION", 3);
+      } else if (settings::solver_type == SolverType::RANDOM_RAY){
+        header("ALPHA EIGENVALUE SIMULATION (RANDOM RAY SOLVER)", 3);
       }
       if (settings::verbosity >= 7)
         print_columns();
@@ -329,7 +339,7 @@ vector<int64_t> work_index;
 
 void allocate_banks()
 {
-  if (settings::run_mode == RunMode::EIGENVALUE &&
+  if ((settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) &&
       settings::solver_type == SolverType::MONTE_CARLO) {
     // Allocate source bank
     simulation::source_bank.resize(simulation::work_per_rank);
@@ -436,7 +446,7 @@ void finalize_batch()
     }
   }
 
-  if (settings::run_mode == RunMode::EIGENVALUE) {
+  if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
     // Write out a separate source point if it's been specified for this batch
     if (contains(settings::sourcepoint_batch, simulation::current_batch) &&
         settings::source_write && settings::source_separate) {
@@ -494,7 +504,7 @@ void finalize_batch()
 
 void initialize_generation()
 {
-  if (settings::run_mode == RunMode::EIGENVALUE) {
+  if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
     // Clear out the fission bank
     simulation::fission_bank.resize(0);
 
@@ -513,7 +523,7 @@ void finalize_generation()
   auto& gt = simulation::global_tallies;
 
   // Update global tallies with the accumulation variables
-  if (settings::run_mode == RunMode::EIGENVALUE) {
+  if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
     gt(GlobalTally::K_COLLISION, TallyResult::VALUE) += global_tally_collision;
     gt(GlobalTally::K_ABSORPTION, TallyResult::VALUE) +=
       global_tally_absorption;
@@ -523,14 +533,14 @@ void finalize_generation()
   gt(GlobalTally::LEAKAGE, TallyResult::VALUE) += global_tally_leakage;
 
   // reset tallies
-  if (settings::run_mode == RunMode::EIGENVALUE) {
+  if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
     global_tally_collision = 0.0;
     global_tally_absorption = 0.0;
     global_tally_tracklength = 0.0;
   }
   global_tally_leakage = 0.0;
 
-  if (settings::run_mode == RunMode::EIGENVALUE &&
+  if ((settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) &&
       settings::solver_type == SolverType::MONTE_CARLO) {
     // If using shared memory, stable sort the fission bank (by parent IDs)
     // so as to allow for reproducibility regardless of which order particles
@@ -541,7 +551,7 @@ void finalize_generation()
     synchronize_bank();
   }
 
-  if (settings::run_mode == RunMode::EIGENVALUE) {
+  if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
 
     // Calculate shannon entropy
     if (settings::entropy_on &&
@@ -562,7 +572,7 @@ void finalize_generation()
 void initialize_history(Particle& p, int64_t index_source)
 {
   // set defaults
-  if (settings::run_mode == RunMode::EIGENVALUE) {
+  if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
     // set defaults for eigenvalue simulations from primary bank
     p.from_source(&simulation::source_bank[index_source - 1]);
   } else if (settings::run_mode == RunMode::FIXED_SOURCE) {
