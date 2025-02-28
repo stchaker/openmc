@@ -1090,6 +1090,11 @@ void read_settings_xml(pugi::xml_node root)
     weight_windows_file = get_node_value(root, "weight_windows_file");
   }
 
+  // read in initial alpha eigenvalue from file
+  if (check_for_node(root, "alpha_initalizer")){
+    settings::alpha_initalizer = get_node_value(root, "alpha_initalizer"); 
+  }
+
   // read settings for weight windows value, this will override
   // the automatic setting even if weight windows are present
   if (check_for_node(root, "weight_windows_on")) {
