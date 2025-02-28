@@ -379,10 +379,15 @@ void print_columns()
   if (settings::entropy_on) {
     fmt::print("  Bat./Gen.      k       Entropy         Average k \n"
                "  =========   ========   ========   ====================\n");
+  } else if (settings::run_mode == RunMode::ALPHA) {
+    fmt::print("  Bat./Gen.      k             Average k          alpha         Average alpha \n"
+               "  =========   ========   =====================  ==========  =====================       \n"); 
   } else {
     fmt::print("  Bat./Gen.      k            Average k\n"
                "  =========   ========   ====================\n");
   }
+
+  
 }
 
 //==============================================================================
@@ -408,6 +413,10 @@ void print_generation()
 
   if (n > 1) {
     fmt::print("   {:8.5f} +/-{:8.5f}", simulation::keff, simulation::keff_std);
+  }
+
+  if (settings::run_mode == RunMode::ALPHA){
+    fmt::print("   {:8.5f}    {8.5f},", simulation::alpha_bank[idx], average_alpha() );
   }
   fmt::print("\n");
   std::fflush(stdout);

@@ -46,6 +46,7 @@ extern const RegularMesh* entropy_mesh;
 extern const RegularMesh* ufs_mesh;
 
 extern vector<double> k_generation;
+extern vector<double> alpha_bank;
 extern vector<int64_t> work_index;
 
 } // namespace simulation
@@ -56,6 +57,9 @@ extern vector<int64_t> work_index;
 
 //! Allocate space for source and fission banks
 void allocate_banks();
+
+//! Calculate the current average alpha value
+double average_alpha(); 
 
 //! Determine number of particles to transport per process
 void calculate_work();

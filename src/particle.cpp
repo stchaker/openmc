@@ -200,12 +200,20 @@ void Particle::event_calculate_xs()
         // temperature hasn't changed, we don't need to lookup cross
         // sections again.
         model::materials[material()]->calculate_xs(*this);
+
+        // Account for time absorption or production with the alpha eigenvalue mode
+        if (settings::run_mode == RunMode::ALPHA){
+          macro_xs().total += (abs(settings::alpha_initalizer) / speed());
+          macro_xs().absorption += (abs(settings::alpha_initalizer) / speed());
+        }
       }
     } else {
       // Get the MG data; unlike the CE case above, we have to re-calculate
       // cross sections for every collision since the cross sections may
       // be angle-dependent
       data::mg.macro_xs_[material()].calculate_xs(*this);
+
+      // Add support for alpha eigenvalue calcs here...
 
       // Update the particle's group while we know we are multi-group
       g_last() = g();
@@ -215,6 +223,12 @@ void Particle::event_calculate_xs()
     macro_xs().absorption = 0.0;
     macro_xs().fission = 0.0;
     macro_xs().nu_fission = 0.0;
+    
+    // Account for the time absorption or production with the alpha eigenvalue mode - even in a void.
+    if (settings::run_mode == RunMode::ALPHA){
+      macro_xs().total += (abs(settings::alpha_initalizer) / speed());
+      macro_xs().absorption += (abs(settings::alpha_initalizer) / speed()); 
+    }
   }
 }
 

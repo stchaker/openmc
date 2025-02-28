@@ -91,6 +91,12 @@ int openmc_simulation_init()
   // Allocate source, fission and surface source banks.
   allocate_banks();
 
+  // If we are running an alpha-eigenvalue simulation, we want to initialize the alpha_bank with our first guess
+  if (settings::run_mode == RunMode::ALPHA){
+    simulation::alpha_bank.emplace_back(settings::alpha_initalizer); 
+  }
+  
+
   // Create track file if needed
   if (!settings::track_identifiers.empty() || settings::write_all_tracks) {
     open_track_file();
@@ -329,6 +335,7 @@ const RegularMesh* entropy_mesh {nullptr};
 const RegularMesh* ufs_mesh {nullptr};
 
 vector<double> k_generation;
+vector<double> alpha_bank; 
 vector<int64_t> work_index;
 
 } // namespace simulation
@@ -336,6 +343,16 @@ vector<int64_t> work_index;
 //==============================================================================
 // Non-member functions
 //==============================================================================
+
+// calculate the average of the alpha bank in an alpha-eigenvalue simulation
+double average_alpha(){
+  double sum = 0.0;
+  for (double val : simulation::alpha_bank){
+    sum += val;
+  }
+  double avg = sum/simulation::alpha_bank.size();
+  return avg;
+}
 
 void allocate_banks()
 {
@@ -412,6 +429,18 @@ void finalize_batch()
   // update weight windows if needed
   for (const auto& wwg : variance_reduction::weight_windows_generators) {
     wwg->update();
+  }
+
+  // perform alpha-k update if needed
+  if (settings::run_mode == RunMode::ALPHA){
+    double alpha_new = 0.0;
+    if(settings::alpha_initalizer >= 0){
+      alpha_new  = settings::alpha_initalizer * simulation::keff;
+    } else {
+      alpha_new = settings::alpha_initalizer / simulation::keff; 
+    }
+    settings::alpha_initalizer = alpha_new;
+    simulation::alpha_bank.emplace_back(settings::alpha_initalizer); 
   }
 
   // Reset global tally results
