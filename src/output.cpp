@@ -415,9 +415,12 @@ void print_generation()
     fmt::print("   {:8.5f} +/-{:8.5f}", simulation::keff, simulation::keff_std);
   }
 
-  if (settings::run_mode == RunMode::ALPHA){
+  if (settings::run_mode == RunMode::ALPHA && n > 1){
     fmt::print("   {:8.5f}    {8.5f},", simulation::alpha_bank[idx], average_alpha() );
+  } else if (settings::run_mode == RunMode::ALPHA){
+    fmt::print("   {:8.5f}    {8.5f},", simulation::alpha_bank[idx]); 
   }
+  
   fmt::print("\n");
   std::fflush(stdout);
 }
