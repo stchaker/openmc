@@ -439,8 +439,8 @@ void finalize_batch()
     } else {
       alpha_new = settings::alpha_initalizer / simulation::keff; 
     }
-    settings::alpha_initalizer = alpha_new;
     simulation::alpha_bank.emplace_back(settings::alpha_initalizer); 
+    settings::alpha_initalizer = alpha_new; 
   }
 
   // Reset global tally results
