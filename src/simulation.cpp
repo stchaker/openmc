@@ -426,23 +426,22 @@ void finalize_batch()
   accumulate_tallies();
   simulation::time_tallies.stop();
 
-  // update weight windows if needed
-  for (const auto& wwg : variance_reduction::weight_windows_generators) {
-    wwg->update();
-  }
-
   // perform alpha-k update if needed
   if (settings::run_mode == RunMode::ALPHA){
-    write_message(1, "The value of the current alpha being used is: {}", settings::alpha_initalizer);
     simulation::alpha_bank.emplace_back(settings::alpha_initalizer); 
     double alpha_new = 0.0;
     int idx = simulation::current_batch;
     if(settings::alpha_initalizer >= 0){
-      alpha_new  = settings::alpha_initalizer * simulation::k_generation[idx];
+      alpha_new  = settings::alpha_initalizer * simulation::keff;
     } else {
-      alpha_new = settings::alpha_initalizer / simulation::k_generation[idx]; 
+      alpha_new = settings::alpha_initalizer / simulation::keff; 
     }
     settings::alpha_initalizer = alpha_new; 
+  }
+
+  // update weight windows if needed
+  for (const auto& wwg : variance_reduction::weight_windows_generators) {
+    wwg->update();
   }
 
   // Reset global tally results

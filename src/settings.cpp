@@ -1092,7 +1092,7 @@ void read_settings_xml(pugi::xml_node root)
 
   // read in initial alpha eigenvalue from file
   if (check_for_node(root, "alpha_initalizer")){
-    settings::alpha_initalizer = get_node_value(root, "alpha_initalizer"); 
+    settings::alpha_initalizer = std::stod(get_node_value(root, "alpha_initalizer")); 
   }
 
   // read settings for weight windows value, this will override
