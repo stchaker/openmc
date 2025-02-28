@@ -73,6 +73,7 @@ int openmc_finalize()
   reset_timers();
 
   // Reset global variables
+  settings::alpha_initalizer = 0.0;
   settings::assume_separate = false;
   settings::check_overlaps = false;
   settings::confidence_intervals = false;
