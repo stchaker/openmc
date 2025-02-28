@@ -433,6 +433,8 @@ void finalize_batch()
 
   // perform alpha-k update if needed
   if (settings::run_mode == RunMode::ALPHA){
+    write_message(1, "The value of the current alpha being used is: {}", settings::alpha_initalizer);
+    simulation::alpha_bank.emplace_back(settings::alpha_initalizer); 
     double alpha_new = 0.0;
     int idx = simulation::current_batch;
     if(settings::alpha_initalizer >= 0){
@@ -440,7 +442,6 @@ void finalize_batch()
     } else {
       alpha_new = settings::alpha_initalizer / simulation::k_generation[idx]; 
     }
-    simulation::alpha_bank.emplace_back(settings::alpha_initalizer); 
     settings::alpha_initalizer = alpha_new; 
   }
 
