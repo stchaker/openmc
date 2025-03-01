@@ -415,11 +415,13 @@ void print_generation()
     fmt::print("   {:8.5f} +/-{:8.5f}", simulation::keff, simulation::keff_std);
   }
 
+  if(settings::run_mode == RunMode::ALPHA && n <= 1){
+    fmt::print("                          {:8.5f}", simulation::alpha_bank[idx]);
+  }
+
   if (settings::run_mode == RunMode::ALPHA && n > 1){
     fmt::print("   {:8.5f}    {:8.5f},", simulation::alpha_bank[idx], average_alpha() );
-  } else if (settings::run_mode == RunMode::ALPHA && n <= 1){
-    fmt::print("   {:8.5f}", simulation::alpha_bank[idx]); 
-  }
+  } 
 
   fmt::print("\n");
   std::fflush(stdout);
@@ -570,6 +572,9 @@ void print_results()
           k_combined[0], k_combined[1]);
       }
     }
+    if(settings::run_mode == RunMode::ALPHA){
+      fmt::print(" Average Alpha-eigenvalue    = {:.5f}\n", average_alpha());
+    }
     std::tie(mean, stdev) = mean_stdev(&gt(GlobalTally::LEAKAGE, 0), n);
     fmt::print(
       " Leakage Fraction            = {:.5f} +/- {:.5f}\n", mean, t_n1 * stdev);
@@ -585,6 +590,9 @@ void print_results()
         gt(GlobalTally::K_TRACKLENGTH, TallyResult::SUM) / n);
       fmt::print(" k-effective (Absorption)   = {:.5f}\n",
         gt(GlobalTally::K_ABSORPTION, TallyResult::SUM) / n);
+    }
+    if(settings::run_mode == RunMode::ALPHA){
+      fmt::print(" Average Alpha-eigenvalue   = {:.5f}\n", average_alpha());
     }
     fmt::print(" Leakage Fraction           = {:.5f}\n",
       gt(GlobalTally::LEAKAGE, TallyResult::SUM) / n);
