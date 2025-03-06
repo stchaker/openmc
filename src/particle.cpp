@@ -201,10 +201,7 @@ void Particle::event_calculate_xs()
         // sections again.
         model::materials[material()]->calculate_xs(*this);
 
-        // Account for time absorption or production with the alpha eigenvalue mode
-        if (settings::run_mode == RunMode::ALPHA){
-          macro_xs().total += abs(simulation::current_alpha) / speed(); 
-        }
+        macro_xs().total += abs(simulation::current_alpha / speed()); 
       }
     } else {
       // Get the MG data; unlike the CE case above, we have to re-calculate
@@ -222,11 +219,11 @@ void Particle::event_calculate_xs()
     macro_xs().absorption = 0.0;
     macro_xs().fission = 0.0;
     macro_xs().nu_fission = 0.0;
-    
-    // Account for the time absorption or production with the alpha eigenvalue mode - even in a void.
-    if (settings::run_mode == RunMode::ALPHA){
-      macro_xs().total += abs(simulation::current_alpha) / speed(); 
+
+    if (settings::run_mode == RunMode::ALPHA) {
+      macro_xs().total += abs(simulation::current_alpha / speed()); 
     }
+
   }
 }
 
@@ -238,7 +235,7 @@ void Particle::event_advance()
   // Sample a distance to collision
   if (type() == ParticleType::electron || type() == ParticleType::positron) {
     collision_distance() = 0.0;
-  } else if (macro_xs().total == 0.0) {
+  } else if ((macro_xs().total) == 0.0) {
     collision_distance() = INFINITY;
   } else {
     collision_distance() = -std::log(prn(current_seed())) / (macro_xs().total);
@@ -348,12 +345,12 @@ void Particle::event_collide()
   // Score collision estimate of keff
   if (settings::run_mode == RunMode::EIGENVALUE &&
       type() == ParticleType::neutron) {
-    keff_tally_collision() += wgt() * macro_xs().nu_fission / macro_xs().total;
+    keff_tally_collision() += wgt() * macro_xs().nu_fission / (macro_xs().total);
   }
 
 if (settings::run_mode == RunMode::ALPHA &&
     type() == ParticleType::neutron) {
-  keff_tally_collision() += wgt() * macro_xs().nu_fission / macro_xs().total;
+  keff_tally_collision() += wgt() * macro_xs().nu_fission / (macro_xs().total);
 }
 
   // Score surface current tallies -- this has to be done before the collision
@@ -366,14 +363,9 @@ if (settings::run_mode == RunMode::ALPHA &&
   // Clear surface component
   surface() = SURFACE_NONE;
 
-  //Perform collision sampling, if alpha eigenvalue mode is on, perform alpha collisions
+  //Perform collision sampling
   if (settings::run_CE) {
-    double alpha_sample = abs((simulation::current_alpha / speed())) / macro_xs().total;
-    if (prn(current_seed()) < alpha_sample) {
-      alpha_collision(*this);
-    } else {
-      collision(*this);
-    }
+    collision(*this);
   } else {
     collision_mg(*this);
   }

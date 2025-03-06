@@ -89,25 +89,11 @@ void collision(Particle& p)
   }
 }
 
-void alpha_collision(Particle& p){
-  // Make sure particle is neutron
-  if(p.type() != ParticleType::neutron){
-    fatal_error("Do not apply alpha-eigenvalue calculations to non-neutron transport!");
-  }
-
+void alpha_interaction(Particle& p, int i_nuclide){
   // Check to make sure alpha mode is on
   if(settings::run_mode != RunMode::ALPHA){
     fatal_error("Alpha collisions are being invoked but the alpha-eigenvalue method is not turned on!");
   }
-
-  // Add collision counter to particle 
-  ++(p.n_collision());
-
-  // Sample a nuclide within the material
-  int i_nuclide = sample_nuclide(p);
-
-  // Save which nuclide particle had collision with
-  p.event_nuclide() = i_nuclide;
 
   // Check the sign of alpha 
   if (simulation::current_alpha >= 0) {
@@ -119,60 +105,52 @@ void alpha_collision(Particle& p){
       // Adjust weight of particle by probability of absorption
       p.wgt() -= wgt_absorb;
   
-      // Score implicit absorption estimate of keff
-      if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
-        /*
-        p.keff_tally_absorption() += wgt_absorb *
-                                     p.neutron_xs(i_nuclide).nu_fission /
-                                     p.neutron_xs(i_nuclide).absorption;
-                                     */
-      }
+      // Perform an explicit absorption with alpha
     } else {
-      // Particle is explicitly absorbed! Estimate keff of explicit absorption
-      if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
-        /*
-        p.keff_tally_absorption() += p.wgt() *
-                                      p.neutron_xs(i_nuclide).nu_fission /
-                                      p.neutron_xs(i_nuclide).absorption;
-                                      */
-      }
-  
       p.wgt() = 0.0;
       p.event() = TallyEvent::ABSORB;
       p.event_mt() = N_DISAPPEAR;
     }
   } else {
-    // For negative alphas this interaction becomes a 2*delta production reaction with 2 particles added to the fission bank as source sites
+    // For negative alphas this interaction becomes a 2*delta production reaction with 2 particles added as secondaries
     // Stored sites are literal copies of the particle undergoing this reaction
-    const int num_created = 2;
-    for(int i = 0; i < num_created; i++){
-      SourceSite site;
-      site.r = p.r();
-      site.u = p.u();
-      site.particle = ParticleType::neutron;
-      site.time = p.time();
-      site.wgt = p.wgt();
-      site.parent_id = p.id();
-      site.progeny_id = p.n_progeny()++;
-      site.surf_id = 0;
-      site.E = p.E();
-      site.delayed_group = p.delayed_group(); 
-      int64_t idx = simulation::fission_bank.thread_safe_append(site);
 
-      if (idx == -1) {
-        warning(
-          "The shared fission bank is full. Additional fission sites created "
-          "in this generation will not be banked.  may be "
-          "non-deterministic.");
-
-        // Decrement number of particle progeny as storage was unsuccessful.
-        // This step is needed so that the sum of all progeny is equal to the
-        // size of the shared fission bank.
-        p.n_progeny()--;
-
-        // Break out of loop as no more sites can be added to fission bank
-        break;
+    // If the particle is undergoing survival biasing its weight is doubled. Otherwise, an explicit absorption which produces two neutrons is done.
+    if (settings::survival_biasing) {
+      p.wgt() *= 2; 
+    } else {
+      const int num_created = 2;
+      for(int i = 0; i < num_created; i++){
+        SourceSite site;
+        site.r = p.r();
+        site.u = p.u();
+        site.particle = ParticleType::neutron;
+        site.time = p.time();
+        site.wgt = p.wgt();
+        site.parent_id = p.id();
+        site.progeny_id = p.n_progeny()++;
+        site.surf_id = 0;
+        site.E = p.E();
+        site.delayed_group = p.delayed_group(); 
+        int64_t idx = simulation::fission_bank.thread_safe_append(site);
+        if (idx == -1) {
+          warning(
+            "The shared fission bank is full. Additional fission sites created "
+            "in this generation will not be banked.  may be "
+            "non-deterministic.");
+  
+          // Decrement number of particle progeny as storage was unsuccessful.
+          // This step is needed so that the sum of all progeny is equal to the
+          // size of the shared fission bank.
+          p.n_progeny()--;
+  
+          // Break out of loop as no more sites can be added to fission bank
+          break;
+        }
       }
+      p.wgt() = 0.0;
+      p.event() = TallyEvent::ABSORB;
+      p.event_mt() = N_2N; 
     }
   }
 }
@@ -184,6 +162,17 @@ void sample_neutron_reaction(Particle& p)
 
   // Save which nuclide particle had collision with
   p.event_nuclide() = i_nuclide;
+
+  // Determine if an alpha interaction occurs
+  double alpha_sample = abs((simulation::current_alpha / p.speed())) / p.macro_xs().total; 
+  if (prn(p.current_seed()) < alpha_sample) {
+    alpha_interaction(p, i_nuclide); 
+  }
+
+  // If particle was absorbed, return, as it does not need to contribute to other interactions
+  if(!p.alive()){
+    return; 
+  }
 
   // Create fission bank sites. Note that while a fission reaction is sampled,
   // it never actually "happens", i.e. the weight of the particle does not
@@ -1132,6 +1121,7 @@ void sample_fission_neutron(
     }
     nu_d *= alpha_sum;
   }
+
   double beta = nu_d / nu_t;
 
   if (prn(seed) < beta) {

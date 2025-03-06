@@ -380,8 +380,8 @@ void print_columns()
     fmt::print("  Bat./Gen.      k       Entropy         Average k \n"
                "  =========   ========   ========   ====================\n");
   } else if (settings::run_mode == RunMode::ALPHA) {
-    fmt::print("  Bat./Gen.      k             Average k          alpha         Average alpha \n"
-               "  =========   ========   =====================  ==========  =====================       \n"); 
+    fmt::print("  Bat./Gen.      k             Average k           alpha [1/mus]       Average alpha[1/mus] \n"
+               "  =========   ========   =====================    ===============    =========================       \n"); 
   } else {
     fmt::print("  Bat./Gen.      k            Average k\n"
                "  =========   ========   ====================\n");
@@ -416,11 +416,15 @@ void print_generation()
   }
 
   if(settings::run_mode == RunMode::ALPHA && n <= 1){
-    fmt::print("                          {:8.5f}", simulation::alpha_bank[idx]);
+    fmt::print("                              {:8.5f}", simulation::current_alpha/1E6);
   }
 
   if (settings::run_mode == RunMode::ALPHA && n > 1){
-    fmt::print("   {:8.5f}    {:8.5f},", simulation::alpha_bank[idx], average_alpha() );
+    if(simulation::alpha_bank.empty()){
+      fmt::print("       {:8.5f}", simulation::current_alpha/1E6);
+    } else {
+    fmt::print("      {:8.5f}    {:8.5f},", simulation::current_alpha/1E6, average_alpha()/1E6 );
+    }
   } 
 
   fmt::print("\n");
@@ -573,7 +577,7 @@ void print_results()
       }
     }
     if(settings::run_mode == RunMode::ALPHA){
-      fmt::print(" Average Alpha-eigenvalue    = {:.5f}\n", average_alpha());
+      fmt::print(" Average Alpha-eigenvalue    = {:.3f}\n", average_alpha()/1E6);
     }
     std::tie(mean, stdev) = mean_stdev(&gt(GlobalTally::LEAKAGE, 0), n);
     fmt::print(
@@ -591,7 +595,7 @@ void print_results()
       fmt::print(" k-effective (Absorption)   = {:.5f}\n",
         gt(GlobalTally::K_ABSORPTION, TallyResult::SUM) / n);
     }
-    if(settings::run_mode == RunMode::ALPHA){
+    if(settings::run_mode == RunMode::ALPHA && !simulation::alpha_bank.empty()){
       fmt::print(" Average Alpha-eigenvalue   = {:.5f}\n", average_alpha());
     }
     fmt::print(" Leakage Fraction           = {:.5f}\n",

@@ -25,7 +25,7 @@ constexpr double FREE_GAS_THRESHOLD {400.0};
 void collision(Particle& p);
 
 //! Perform alpha absorption or production
-void alpha_collision(Particle& p);
+void alpha_interaction(Particle& p, int i_nuclide);
 
 //! Samples an incident neutron reaction
 void sample_neutron_reaction(Particle& p);

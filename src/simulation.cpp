@@ -279,7 +279,6 @@ int openmc_next_batch(int* status)
 
     finalize_generation();
   }
-
   finalize_batch();
 
   // Check simulation ending criteria
@@ -348,10 +347,12 @@ vector<int64_t> work_index;
 // calculate the average of the alpha bank in an alpha-eigenvalue simulation
 double average_alpha(){
   double sum = 0.0;
+  int counter = 0;
   for (double val : simulation::alpha_bank){
     sum += val;
+    counter += 1;
   }
-  double avg = sum/simulation::alpha_bank.size();
+  double avg = sum/counter;
   return avg;
 }
 
@@ -363,7 +364,7 @@ void allocate_banks()
     simulation::source_bank.resize(simulation::work_per_rank);
 
     // Allocate fission bank
-    init_fission_bank(3 * simulation::work_per_rank);
+    init_fission_bank(4 * simulation::work_per_rank);
 
     // Allocate IFP bank
     if (settings::ifp) {
@@ -430,15 +431,15 @@ void finalize_batch()
   // perform alpha-k update if needed
   if (settings::run_mode == RunMode::ALPHA){
     double alpha_new = 0.0;
-    int idx = overall_generation() - 1;
+    double alpha_std = 0.0; 
+    int idx = overall_generation() - 2;
     if(simulation::current_alpha >= 0){
       //alpha_new  = simulation::current_alpha * simulation::keff;
-      alpha_new = simulation::current_alpha * simulation::k_generation[idx];
+      alpha_new = simulation::current_alpha * simulation::keff;
     } else {
       //alpha_new = simulation::current_alpha / simulation::keff; 
-      alpha_new = simulation::current_alpha / simulation::k_generation[idx]; 
+      alpha_new = simulation::current_alpha / simulation::keff; 
     }
-    simulation::alpha_bank.emplace_back(alpha_new);
     simulation::current_alpha = alpha_new; 
   }
 
@@ -554,6 +555,13 @@ void initialize_generation()
 void finalize_generation()
 {
   auto& gt = simulation::global_tallies;
+
+  if (settings::run_mode == RunMode::ALPHA) {
+    // only store into alpha bank during active batches to get good statistics on alpha
+    if(simulation::current_batch > settings::n_inactive) {
+      simulation::alpha_bank.emplace_back(simulation::current_alpha);
+    }
+  }
 
   // Update global tallies with the accumulation variables
   if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
