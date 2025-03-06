@@ -121,16 +121,20 @@ void alpha_collision(Particle& p){
   
       // Score implicit absorption estimate of keff
       if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+        /*
         p.keff_tally_absorption() += wgt_absorb *
                                      p.neutron_xs(i_nuclide).nu_fission /
                                      p.neutron_xs(i_nuclide).absorption;
+                                     */
       }
     } else {
       // Particle is explicitly absorbed! Estimate keff of explicit absorption
       if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+        /*
         p.keff_tally_absorption() += p.wgt() *
                                       p.neutron_xs(i_nuclide).nu_fission /
                                       p.neutron_xs(i_nuclide).absorption;
+                                      */
       }
   
       p.wgt() = 0.0;
@@ -567,7 +571,7 @@ void sample_positron_reaction(Particle& p)
 int sample_nuclide(Particle& p)
 {
   // Sample cumulative distribution function
-  double cutoff = prn(p.current_seed()) * (p.macro_xs().total - (simulation::current_alpha/p.speed()));
+  double cutoff = prn(p.current_seed()) * (p.macro_xs().total - (abs(simulation::current_alpha)/p.speed()));
 
   // Get pointers to nuclide/density arrays
   const auto& mat {model::materials[p.material()]};

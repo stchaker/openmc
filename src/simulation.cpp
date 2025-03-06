@@ -430,11 +430,13 @@ void finalize_batch()
   // perform alpha-k update if needed
   if (settings::run_mode == RunMode::ALPHA){
     double alpha_new = 0.0;
-    int idx = simulation::current_batch;
+    int idx = overall_generation() - 1;
     if(simulation::current_alpha >= 0){
-      alpha_new  = simulation::current_alpha * simulation::keff;
+      //alpha_new  = simulation::current_alpha * simulation::keff;
+      alpha_new = simulation::current_alpha * simulation::k_generation[idx];
     } else {
-      alpha_new = simulation::current_alpha / simulation::keff; 
+      //alpha_new = simulation::current_alpha / simulation::keff; 
+      alpha_new = simulation::current_alpha / simulation::k_generation[idx]; 
     }
     simulation::alpha_bank.emplace_back(alpha_new);
     simulation::current_alpha = alpha_new; 
