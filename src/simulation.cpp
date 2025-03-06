@@ -91,9 +91,10 @@ int openmc_simulation_init()
   // Allocate source, fission and surface source banks.
   allocate_banks();
 
-  // If we are running an alpha-eigenvalue simulation, we want to initialize the alpha_bank with our first guess
+  // If we are running an alpha-eigenvalue simulation, we want to initialize the alpha_bank with our first guess and set the value of current_alpha
   if (settings::run_mode == RunMode::ALPHA){
     simulation::alpha_bank.emplace_back(settings::alpha_initalizer); 
+    simulation::current_alpha = settings::alpha_initalizer;
   }
   
 
@@ -313,6 +314,7 @@ namespace openmc {
 
 namespace simulation {
 
+double current_alpha = 0.0;
 int current_batch;
 int current_gen;
 bool initialized {false};
@@ -330,7 +332,6 @@ int ssw_current_file;
 int total_gen {0};
 double total_weight;
 int64_t work_per_rank;
-
 const RegularMesh* entropy_mesh {nullptr};
 const RegularMesh* ufs_mesh {nullptr};
 
@@ -430,13 +431,13 @@ void finalize_batch()
   if (settings::run_mode == RunMode::ALPHA){
     double alpha_new = 0.0;
     int idx = simulation::current_batch;
-    if(settings::alpha_initalizer >= 0){
-      alpha_new  = settings::alpha_initalizer * simulation::keff;
+    if(simulation::current_alpha >= 0){
+      alpha_new  = simulation::current_alpha * simulation::keff;
     } else {
-      alpha_new = settings::alpha_initalizer / simulation::keff; 
+      alpha_new = simulation::current_alpha / simulation::keff; 
     }
     simulation::alpha_bank.emplace_back(alpha_new);
-    settings::alpha_initalizer = alpha_new; 
+    simulation::current_alpha = alpha_new; 
   }
 
   // update weight windows if needed

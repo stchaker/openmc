@@ -89,6 +89,90 @@ void collision(Particle& p)
   }
 }
 
+void alpha_collision(Particle& p){
+  // Make sure particle is neutron
+  if(p.type() != ParticleType::neutron){
+    fatal_error("Do not apply alpha-eigenvalue calculations to non-neutron transport!");
+  }
+
+  // Check to make sure alpha mode is on
+  if(settings::run_mode != RunMode::ALPHA){
+    fatal_error("Alpha collisions are being invoked but the alpha-eigenvalue method is not turned on!");
+  }
+
+  // Add collision counter to particle 
+  ++(p.n_collision());
+
+  // Sample a nuclide within the material
+  int i_nuclide = sample_nuclide(p);
+
+  // Save which nuclide particle had collision with
+  p.event_nuclide() = i_nuclide;
+
+  // Check the sign of alpha 
+  if (simulation::current_alpha >= 0) {
+    if (settings::survival_biasing) {
+      // Determine weight absorbed in survival biasing with alpha
+      const double wgt_absorb = p.wgt() * p.neutron_xs(i_nuclide).absorption /
+                                p.neutron_xs(i_nuclide).total;
+  
+      // Adjust weight of particle by probability of absorption
+      p.wgt() -= wgt_absorb;
+  
+      // Score implicit absorption estimate of keff
+      if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+        p.keff_tally_absorption() += wgt_absorb *
+                                     p.neutron_xs(i_nuclide).nu_fission /
+                                     p.neutron_xs(i_nuclide).absorption;
+      }
+    } else {
+      // Particle is explicitly absorbed! Estimate keff of explicit absorption
+      if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+        p.keff_tally_absorption() += p.wgt() *
+                                      p.neutron_xs(i_nuclide).nu_fission /
+                                      p.neutron_xs(i_nuclide).absorption;
+      }
+  
+      p.wgt() = 0.0;
+      p.event() = TallyEvent::ABSORB;
+      p.event_mt() = N_DISAPPEAR;
+    }
+  } else {
+    // For negative alphas this interaction becomes a 2*delta production reaction with 2 particles added to the fission bank as source sites
+    // Stored sites are literal copies of the particle undergoing this reaction
+    const int num_created = 2;
+    for(int i = 0; i < num_created; i++){
+      SourceSite site;
+      site.r = p.r();
+      site.u = p.u();
+      site.particle = ParticleType::neutron;
+      site.time = p.time();
+      site.wgt = p.wgt();
+      site.parent_id = p.id();
+      site.progeny_id = p.n_progeny()++;
+      site.surf_id = 0;
+      site.E = p.E();
+      site.delayed_group = p.delayed_group(); 
+      int64_t idx = simulation::fission_bank.thread_safe_append(site);
+
+      if (idx == -1) {
+        warning(
+          "The shared fission bank is full. Additional fission sites created "
+          "in this generation will not be banked.  may be "
+          "non-deterministic.");
+
+        // Decrement number of particle progeny as storage was unsuccessful.
+        // This step is needed so that the sum of all progeny is equal to the
+        // size of the shared fission bank.
+        p.n_progeny()--;
+
+        // Break out of loop as no more sites can be added to fission bank
+        break;
+      }
+    }
+  }
+}
+
 void sample_neutron_reaction(Particle& p)
 {
   // Sample a nuclide within the material
@@ -483,7 +567,7 @@ void sample_positron_reaction(Particle& p)
 int sample_nuclide(Particle& p)
 {
   // Sample cumulative distribution function
-  double cutoff = prn(p.current_seed()) * p.macro_xs().total;
+  double cutoff = prn(p.current_seed()) * (p.macro_xs().total - (simulation::current_alpha/p.speed()));
 
   // Get pointers to nuclide/density arrays
   const auto& mat {model::materials[p.material()]};
@@ -494,8 +578,6 @@ int sample_nuclide(Particle& p)
     // Get atom density
     int i_nuclide = mat->nuclide_[i];
     double atom_density = mat->atom_density_[i];
-
-    // Increment probability to compare to cutoff
     prob += atom_density * p.neutron_xs(i_nuclide).total;
     if (prob >= cutoff)
       return i_nuclide;
@@ -1038,10 +1120,11 @@ void sample_fission_neutron(
   const auto& nuc {data::nuclides[i_nuclide]};
   double nu_t = nuc->nu(E_in, Nuclide::EmissionMode::total);
   double nu_d = nuc->nu(E_in, Nuclide::EmissionMode::delayed);
+  // update the delayed fission sampling parameter with the alpha delayed contribution if alpha mode is on.
   if (settings::run_mode == RunMode::ALPHA){
     double alpha_sum = 0.0;
     for(int i; i < nuc->n_precursor_; ++i){
-      alpha_sum += (rx.products_[i].decay_rate_) / (rx.products_[i].decay_rate_ + settings::alpha_initalizer);
+      alpha_sum += (rx.products_[i].decay_rate_) / (rx.products_[i].decay_rate_ + simulation::current_alpha);
     }
     nu_d *= alpha_sum;
   }

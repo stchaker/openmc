@@ -203,8 +203,7 @@ void Particle::event_calculate_xs()
 
         // Account for time absorption or production with the alpha eigenvalue mode
         if (settings::run_mode == RunMode::ALPHA){
-          macro_xs().total += (abs(settings::alpha_initalizer) / speed());
-          macro_xs().absorption += (abs(settings::alpha_initalizer) / speed());
+          macro_xs().total += abs(simulation::current_alpha) / speed(); 
         }
       }
     } else {
@@ -226,8 +225,7 @@ void Particle::event_calculate_xs()
     
     // Account for the time absorption or production with the alpha eigenvalue mode - even in a void.
     if (settings::run_mode == RunMode::ALPHA){
-      macro_xs().total += (abs(settings::alpha_initalizer) / speed());
-      macro_xs().absorption += (abs(settings::alpha_initalizer) / speed()); 
+      macro_xs().total += abs(simulation::current_alpha) / speed(); 
     }
   }
 }
@@ -243,8 +241,9 @@ void Particle::event_advance()
   } else if (macro_xs().total == 0.0) {
     collision_distance() = INFINITY;
   } else {
-    collision_distance() = -std::log(prn(current_seed())) / macro_xs().total;
+    collision_distance() = -std::log(prn(current_seed())) / (macro_xs().total);
   }
+  
 
   // Select smaller of the two distances
   double distance = std::min(boundary().distance, collision_distance());
@@ -367,8 +366,14 @@ if (settings::run_mode == RunMode::ALPHA &&
   // Clear surface component
   surface() = SURFACE_NONE;
 
+  //Perform collision sampling, if alpha eigenvalue mode is on, perform alpha collisions
   if (settings::run_CE) {
-    collision(*this);
+    double alpha_sample = abs((simulation::current_alpha / speed())) / macro_xs().total;
+    if (prn(current_seed()) < alpha_sample) {
+      alpha_collision(*this);
+    } else {
+      collision(*this);
+    }
   } else {
     collision_mg(*this);
   }
