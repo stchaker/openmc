@@ -1168,8 +1168,9 @@ class Settings:
         self._random_ray = random_ray
         
     def _create_alpha_initalizer_subelement(self, root):
-        elem = ET.SubElement(root, "alpha_initalizer")
-        elem.text = str(self._alpha_initalizer)
+        if self._alpha_initalizer is not None:
+            elem = ET.SubElement(root, "alpha_initalizer")
+            elem.text = str(self._alpha_initalizer)
 
     def _create_run_mode_subelement(self, root):
         elem = ET.SubElement(root, "run_mode")
