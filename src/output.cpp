@@ -423,7 +423,7 @@ void print_generation()
     if(simulation::alpha_bank.empty()){
       fmt::print("       {:8.5f}", simulation::current_alpha/1E6);
     } else {
-    fmt::print("      {:8.5f}    {:8.5f},", simulation::current_alpha/1E6, average_alpha()/1E6 );
+    fmt::print("       {:8.5f}                {:8.5f},", simulation::current_alpha/1E6, average_alpha()/1E6 );
     }
   } 
 

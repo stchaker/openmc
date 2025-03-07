@@ -89,69 +89,76 @@ void collision(Particle& p)
   }
 }
 
-void alpha_interaction(Particle& p, int i_nuclide){
+void alpha_absorption(Particle& p, int i_nuclide){
   // Check to make sure alpha mode is on
   if(settings::run_mode != RunMode::ALPHA){
     fatal_error("Alpha collisions are being invoked but the alpha-eigenvalue method is not turned on!");
   }
 
-  // Check the sign of alpha 
-  if (simulation::current_alpha >= 0) {
-    if (settings::survival_biasing) {
-      // Determine weight absorbed in survival biasing with alpha
-      const double wgt_absorb = p.wgt() * p.neutron_xs(i_nuclide).absorption /
-                                p.neutron_xs(i_nuclide).total;
+  if (settings::survival_biasing) {
+    // Determine weight absorbed in survival biasing with alpha
+    const double wgt_absorb = p.wgt() * p.neutron_xs(i_nuclide).absorption /
+                              p.neutron_xs(i_nuclide).total;
   
-      // Adjust weight of particle by probability of absorption
-      p.wgt() -= wgt_absorb;
+    // Adjust weight of particle by probability of absorption
+    p.wgt() -= wgt_absorb;
   
-      // Perform an explicit absorption with alpha
-    } else {
-      p.wgt() = 0.0;
-      p.event() = TallyEvent::ABSORB;
-      p.event_mt() = N_DISAPPEAR;
-    }
+    // Perform an explicit absorption with alpha
   } else {
-    // For negative alphas this interaction becomes a 2*delta production reaction with 2 particles added as secondaries
-    // Stored sites are literal copies of the particle undergoing this reaction
+    p.wgt() = 0.0;
+    p.event() = TallyEvent::ABSORB;
+    p.event_mt() = N_DISAPPEAR;
+  }
+}
+void alpha_production(Particle& p){
+  // For negative alphas this interaction becomes a 2*delta production reaction with 2 particles added as secondaries
+  // Stored sites are literal copies of the particle undergoing this reaction
 
-    // If the particle is undergoing survival biasing its weight is doubled. Otherwise, an explicit absorption which produces two neutrons is done.
-    if (settings::survival_biasing) {
-      p.wgt() *= 2; 
-    } else {
-      const int num_created = 2;
-      for(int i = 0; i < num_created; i++){
-        SourceSite site;
-        site.r = p.r();
-        site.u = p.u();
-        site.particle = ParticleType::neutron;
-        site.time = p.time();
-        site.wgt = p.wgt();
-        site.parent_id = p.id();
-        site.progeny_id = p.n_progeny()++;
-        site.surf_id = 0;
-        site.E = p.E();
-        site.delayed_group = p.delayed_group(); 
-        int64_t idx = simulation::fission_bank.thread_safe_append(site);
-        if (idx == -1) {
-          warning(
-            "The shared fission bank is full. Additional fission sites created "
-            "in this generation will not be banked.  may be "
-            "non-deterministic.");
-  
-          // Decrement number of particle progeny as storage was unsuccessful.
-          // This step is needed so that the sum of all progeny is equal to the
-          // size of the shared fission bank.
-          p.n_progeny()--;
-  
-          // Break out of loop as no more sites can be added to fission bank
-          break;
-        }
+  // Check to make sure alpha mode is on
+  if(settings::run_mode != RunMode::ALPHA){
+    fatal_error("Alpha collisions are being invoked but the alpha-eigenvalue method is not turned on!");
+  }
+
+  // If the particle is undergoing survival biasing its weight is doubled. Otherwise, an explicit absorption which produces two neutrons is done.
+  if (settings::survival_biasing) {
+    p.wgt() *= 2; 
+  } else {
+    const int num_created = 2;
+    // particle creates two identical copies and stores into fission bank
+    // particle is then absorbed
+    for(int i = 0; i < num_created; i++){ 
+      SourceSite site; 
+      site.r = p.r();
+      site.u = p.u();
+      site.E = p.E();
+      site.time = p.time();
+      site.wgt = p.wgt();
+      site.particle = p.type();
+      site.delayed_group = p.delayed_group();
+      p.bank_second_E() += site.E;
+      p.secondary_bank().emplace_back(site); 
+      /*
+      int64_t idx = simulation::fission_bank.thread_safe_append(site);
+      if (idx == -1) {
+        warning(
+          "The shared fission bank is full. Additional fission sites created "
+          "in this generation will not be banked.  may be "
+          "non-deterministic.");
+
+        // Decrement number of particle progeny as storage was unsuccessful.
+        // This step is needed so that the sum of all progeny is equal to the
+        // size of the shared fission bank.
+        p.n_progeny()--;
+
+        // Break out of loop as no more sites can be added to fission bank
+        break;
       }
-      p.wgt() = 0.0;
-      p.event() = TallyEvent::ABSORB;
-      p.event_mt() = N_2N; 
+      */
     }
+    // finally, particle is killed, and its progeny updated treat the interaction as if doing an n-2n reaction. 
+    p.wgt() = 0.0;
+    p.event() = TallyEvent::ABSORB;
+    p.event_mt() = N_2N; 
   }
 }
 
@@ -164,9 +171,13 @@ void sample_neutron_reaction(Particle& p)
   p.event_nuclide() = i_nuclide;
 
   // Determine if an alpha interaction occurs
-  double alpha_sample = abs((simulation::current_alpha / p.speed())) / p.macro_xs().total; 
+  double alpha_sample = (abs((simulation::current_alpha)) / p.speed()) / p.macro_xs().total; 
   if (prn(p.current_seed()) < alpha_sample) {
-    alpha_interaction(p, i_nuclide); 
+    if (simulation::current_alpha >= 0) {
+      alpha_absorption(p, i_nuclide);
+    } else {
+      alpha_production(p);
+    }
   }
 
   // If particle was absorbed, return, as it does not need to contribute to other interactions
@@ -295,7 +306,7 @@ void create_fission_sites(Particle& p, int i_nuclide, const Reaction& rx)
     if (use_fission_bank) {
       int64_t idx = simulation::fission_bank.thread_safe_append(site);
       if (idx == -1) {
-        warning(
+         warning(
           "The shared fission bank is full. Additional fission sites created "
           "in this generation will not be banked.  may be "
           "non-deterministic.");

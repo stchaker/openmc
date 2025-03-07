@@ -99,6 +99,7 @@ void Particle::create_secondary(
   bank.E = settings::run_CE ? E : g();
   bank.time = time();
   bank_second_E() += bank.E;
+
 }
 
 void Particle::split(double wgt)
@@ -200,8 +201,7 @@ void Particle::event_calculate_xs()
         // temperature hasn't changed, we don't need to lookup cross
         // sections again.
         model::materials[material()]->calculate_xs(*this);
-
-        macro_xs().total += abs(simulation::current_alpha / speed()); 
+        macro_xs().total += abs(simulation::current_alpha) / speed(); 
       }
     } else {
       // Get the MG data; unlike the CE case above, we have to re-calculate
@@ -210,7 +210,7 @@ void Particle::event_calculate_xs()
       data::mg.macro_xs_[material()].calculate_xs(*this);
 
       // Add support for alpha eigenvalue calcs here...
-
+      
       // Update the particle's group while we know we are multi-group
       g_last() = g();
     }
@@ -221,7 +221,7 @@ void Particle::event_calculate_xs()
     macro_xs().nu_fission = 0.0;
 
     if (settings::run_mode == RunMode::ALPHA) {
-      macro_xs().total += abs(simulation::current_alpha / speed()); 
+      macro_xs().total += abs(simulation::current_alpha) / speed(); 
     }
 
   }
@@ -346,6 +346,7 @@ void Particle::event_collide()
   if (settings::run_mode == RunMode::EIGENVALUE &&
       type() == ParticleType::neutron) {
     keff_tally_collision() += wgt() * macro_xs().nu_fission / (macro_xs().total);
+    
   }
 
 if (settings::run_mode == RunMode::ALPHA &&

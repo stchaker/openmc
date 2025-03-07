@@ -91,9 +91,8 @@ int openmc_simulation_init()
   // Allocate source, fission and surface source banks.
   allocate_banks();
 
-  // If we are running an alpha-eigenvalue simulation, we want to initialize the alpha_bank with our first guess and set the value of current_alpha
+  // If we are running an alpha-eigenvalue simulation, set the value of the simulation alpha to the initalized value from the user. 
   if (settings::run_mode == RunMode::ALPHA){
-    simulation::alpha_bank.emplace_back(settings::alpha_initalizer); 
     simulation::current_alpha = settings::alpha_initalizer;
   }
   
@@ -364,7 +363,7 @@ void allocate_banks()
     simulation::source_bank.resize(simulation::work_per_rank);
 
     // Allocate fission bank
-    init_fission_bank(4 * simulation::work_per_rank);
+    init_fission_bank(5 * simulation::work_per_rank);
 
     // Allocate IFP bank
     if (settings::ifp) {
@@ -435,10 +434,10 @@ void finalize_batch()
     int idx = overall_generation() - 2;
     if(simulation::current_alpha >= 0){
       //alpha_new  = simulation::current_alpha * simulation::keff;
-      alpha_new = simulation::current_alpha * simulation::keff;
+      alpha_new = simulation::current_alpha * simulation::k_generation[idx];
     } else {
       //alpha_new = simulation::current_alpha / simulation::keff; 
-      alpha_new = simulation::current_alpha / simulation::keff; 
+      alpha_new = simulation::current_alpha / simulation::k_generation[idx]; 
     }
     simulation::current_alpha = alpha_new; 
   }
