@@ -24,8 +24,14 @@ constexpr double FREE_GAS_THRESHOLD {400.0};
 //! Sample a nuclide and reaction and then calls the appropriate routine
 void collision(Particle& p);
 
-//! Perform alpha absorption or production
-void alpha_interaction(Particle& p, int i_nuclide);
+//! Perform time absorption 
+void alpha_absorption(Particle& p, int i_nuclide);
+
+// Perform time production
+void alpha_production(Particle& p);
+
+// Alternative method for time production
+void alpha_production_2(Particle& p);
 
 //! Samples an incident neutron reaction
 void sample_neutron_reaction(Particle& p);

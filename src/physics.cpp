@@ -97,8 +97,7 @@ void alpha_absorption(Particle& p, int i_nuclide){
 
   if (settings::survival_biasing) {
     // Determine weight absorbed in survival biasing with alpha
-    const double wgt_absorb = p.wgt() * p.neutron_xs(i_nuclide).absorption /
-                              p.neutron_xs(i_nuclide).total;
+    const double wgt_absorb = p.wgt() * ((simulation::current_alpha / p.speed()) / p.macro_xs().total);
   
     // Adjust weight of particle by probability of absorption
     p.wgt() -= wgt_absorb;
@@ -122,7 +121,7 @@ void alpha_production(Particle& p){
   // If the particle is undergoing survival biasing its weight is doubled. Otherwise, an explicit absorption which produces two neutrons is done.
   if (settings::survival_biasing) {
     p.wgt() *= 2; 
-  } else {
+  } else if (!settings::survival_biasing){
     const int num_created = 2;
     // particle creates two identical copies and stores into fission bank
     // particle is then absorbed
@@ -133,12 +132,12 @@ void alpha_production(Particle& p){
       site.E = p.E();
       site.time = p.time();
       site.wgt = p.wgt();
-      site.particle = p.type();
+      site.particle = ParticleType::neutron;
       site.delayed_group = p.delayed_group();
-      p.bank_second_E() += site.E;
-      p.secondary_bank().emplace_back(site); 
-      /*
-      int64_t idx = simulation::fission_bank.thread_safe_append(site);
+      site.parent_id = p.id();
+      site.progeny_id = p.n_progeny()++; 
+      int64_t idx = simulation::fission_bank.thread_safe_append(site); 
+      
       if (idx == -1) {
         warning(
           "The shared fission bank is full. Additional fission sites created "
@@ -153,12 +152,35 @@ void alpha_production(Particle& p){
         // Break out of loop as no more sites can be added to fission bank
         break;
       }
-      */
+      p.wgt() = 0.0;
+      p.event() = TallyEvent::ABSORB;
+      p.event_mt() = N_DISAPPEAR;
     }
-    // finally, particle is killed, and its progeny updated treat the interaction as if doing an n-2n reaction. 
+  }
+}
+
+void alpha_production_2(Particle& p){
+    // For negative alphas this interaction becomes a 2*delta production reaction with 2 particles added as secondaries
+  // Stored sites are literal copies of the particle undergoing this reaction
+
+  // Check to make sure alpha mode is on
+  if(settings::run_mode != RunMode::ALPHA){
+    fatal_error("Alpha collisions are being invoked but the alpha-eigenvalue method is not turned on!");
+  }
+
+  // If the particle is undergoing survival biasing its weight is doubled. Otherwise, an explicit absorption which produces two neutrons is done.
+  if (settings::survival_biasing) {
+    p.wgt() *= 2; 
+  } else if (!settings::survival_biasing){
+    const int num_created = 2;
+    // particle creates two identical secondaries, then is absorbed.
+    for(int i = 0; i < num_created; i++){ 
+      p.create_secondary(p.wgt(), p.u(), p.E(), p.type()); 
+    }
+          
     p.wgt() = 0.0;
     p.event() = TallyEvent::ABSORB;
-    p.event_mt() = N_2N; 
+    p.event_mt() = N_2N;
   }
 }
 
@@ -170,13 +192,23 @@ void sample_neutron_reaction(Particle& p)
   // Save which nuclide particle had collision with
   p.event_nuclide() = i_nuclide;
 
-  // Determine if an alpha interaction occurs
-  double alpha_sample = (abs((simulation::current_alpha)) / p.speed()) / p.macro_xs().total; 
-  if (prn(p.current_seed()) < alpha_sample) {
-    if (simulation::current_alpha >= 0) {
+  // Determine if an alpha interaction for this collision event.
+  
+  if(!settings::survival_biasing){
+    if (prn(p.current_seed()) * p.macro_xs().total < (abs(simulation::current_alpha) / p.speed())) {
+     if (simulation::current_alpha >= 0) {
+        alpha_absorption(p, i_nuclide);
+      } else {
+        alpha_production_2(p);
+      }
+    }
+  } else {
+    if (simulation::current_alpha >= 0 ) {
       alpha_absorption(p, i_nuclide);
     } else {
-      alpha_production(p);
+      if (prn(p.current_seed()) * p.macro_xs().total < (abs(simulation::current_alpha) / p.speed())) {
+        alpha_production_2(p);
+      }
     }
   }
 
