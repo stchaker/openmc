@@ -215,6 +215,13 @@ void sample_neutron_reaction(Particle& p)
     }
   }
 
+  // Apply weight windows here if running on alpha mode to ensure that alpha production 
+  // and absorption interactions do not cause unbounded growth or decay.
+
+  if(settings::run_mode == RunMode::ALPHA && settings::weight_window_checkpoint_collision){
+    apply_weight_windows(p);
+  }
+
   // If particle was absorbed, return, as it does not need to contribute to other interactions
   if(!p.alive()){
     return; 
