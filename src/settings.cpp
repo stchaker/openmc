@@ -92,6 +92,7 @@ const char* path_statepoint_c {path_statepoint.c_str()};
 std::string weight_windows_file;
 
 double alpha_initalizer {0.0};
+double alpha_parameter {1.0};
 int32_t n_inactive {0};
 int32_t max_lost_particles {10};
 double rel_max_lost_particles {1.0e-6};
@@ -1093,6 +1094,11 @@ void read_settings_xml(pugi::xml_node root)
   // read in initial alpha eigenvalue from file
   if (check_for_node(root, "alpha_initalizer")){
     settings::alpha_initalizer = std::stod(get_node_value(root, "alpha_initalizer")); 
+  }
+
+  // read in initial alpha parameter from file
+  if (check_for_node(root, "alpha_parameter")){
+    settings::alpha_parameter = std::stod(get_node_value(root, "alpha_parameter")); 
   }
 
   // read settings for weight windows value, this will override

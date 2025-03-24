@@ -97,7 +97,7 @@ void alpha_absorption(Particle& p, int i_nuclide){
 
   if (settings::survival_biasing) {
     // Determine weight absorbed in survival biasing with alpha
-    const double wgt_absorb = p.wgt() * ((simulation::current_alpha / p.speed()) / p.macro_xs().total);
+    const double wgt_absorb = p.wgt() * ((settings::alpha_parameter * abs(simulation::current_alpha) / p.speed()) / p.macro_xs().total);
   
     // Adjust weight of particle by probability of absorption
     p.wgt() -= wgt_absorb;
@@ -109,6 +109,7 @@ void alpha_absorption(Particle& p, int i_nuclide){
     p.event_mt() = N_DISAPPEAR;
   }
 }
+
 void alpha_production(Particle& p){
   // For negative alphas this interaction becomes a 2*delta production reaction with 2 particles added as secondaries
   // Stored sites are literal copies of the particle undergoing this reaction
@@ -120,12 +121,12 @@ void alpha_production(Particle& p){
 
   // If the particle is undergoing survival biasing its weight is doubled. Otherwise, an explicit absorption which produces two neutrons is done.
   if (settings::survival_biasing) {
-    p.wgt() *= 2; 
+    p.wgt() *= (1+settings::alpha_parameter)/settings::alpha_parameter; 
   } else if (!settings::survival_biasing){
-    const int num_created = 2;
+    double num_created = (1+settings::alpha_parameter)/settings::alpha_parameter;
     // particle creates two identical copies and stores into fission bank
     // particle is then absorbed
-    for(int i = 0; i < num_created; i++){ 
+    for(int i = 0; i < static_cast<int>(std::round(num_created)) - 1; ++i){ 
       SourceSite site; 
       site.r = p.r();
       site.u = p.u();
@@ -154,11 +155,12 @@ void alpha_production(Particle& p){
       }
       p.wgt() = 0.0;
       p.event() = TallyEvent::ABSORB;
-      p.event_mt() = N_DISAPPEAR;
+      p.event_mt() = N_2N;
     }
   }
 }
 
+/*
 void alpha_production_2(Particle& p){
     // For negative alphas this interaction becomes a 2*delta production reaction with 2 particles added as secondaries
   // Stored sites are literal copies of the particle undergoing this reaction
@@ -170,11 +172,11 @@ void alpha_production_2(Particle& p){
 
   // If the particle is undergoing survival biasing its weight is doubled. Otherwise, an explicit absorption which produces two neutrons is done.
   if (settings::survival_biasing) {
-    p.wgt() *= 2; 
+    p.wgt() *= (1+settings::alpha_parameter)/settings::alpha_parameter; 
   } else if (!settings::survival_biasing){
-    const int num_created = 2;
+    double num_created = (1+settings::alpha_parameter)/settings::alpha_parameter;
     // particle creates two identical secondaries, then is absorbed.
-    for(int i = 0; i < num_created; i++){ 
+    for(int i = 0; i < static_cast<int>(std::round(num_created)) - 1; ++i){ 
       p.create_secondary(p.wgt(), p.u(), p.E(), p.type()); 
     }
           
@@ -183,6 +185,7 @@ void alpha_production_2(Particle& p){
     p.event_mt() = N_2N;
   }
 }
+*/
 
 void sample_neutron_reaction(Particle& p)
 {
@@ -195,19 +198,19 @@ void sample_neutron_reaction(Particle& p)
   // Determine if an alpha interaction for this collision event.
   
   if(!settings::survival_biasing){
-    if (prn(p.current_seed()) * p.macro_xs().total < (abs(simulation::current_alpha) / p.speed())) {
+    if (prn(p.current_seed()) * p.macro_xs().total < (settings::alpha_parameter * abs(simulation::current_alpha) / p.speed())) {
      if (simulation::current_alpha >= 0) {
         alpha_absorption(p, i_nuclide);
       } else {
-        alpha_production_2(p);
+        alpha_production(p);
       }
     }
   } else {
-    if (simulation::current_alpha >= 0 ) {
+    if (settings::run_mode == RunMode::ALPHA && simulation::current_alpha >= 0 ) {
       alpha_absorption(p, i_nuclide);
-    } else {
-      if (prn(p.current_seed()) * p.macro_xs().total < (abs(simulation::current_alpha) / p.speed())) {
-        alpha_production_2(p);
+    } else if (settings::run_mode == RunMode::ALPHA && simulation::current_alpha < 0) {
+      if (prn(p.current_seed()) * p.macro_xs().total < (settings::alpha_parameter * abs(simulation::current_alpha) / p.speed())) {
+        alpha_production(p);
       }
     }
   }
@@ -603,7 +606,7 @@ void sample_positron_reaction(Particle& p)
 int sample_nuclide(Particle& p)
 {
   // Sample cumulative distribution function
-  double cutoff = prn(p.current_seed()) * (p.macro_xs().total - (abs(simulation::current_alpha)/p.speed()));
+  double cutoff = prn(p.current_seed()) * (p.macro_xs().total - (settings::alpha_parameter * abs(simulation::current_alpha)/p.speed()));
 
   // Get pointers to nuclide/density arrays
   const auto& mat {model::materials[p.material()]};
