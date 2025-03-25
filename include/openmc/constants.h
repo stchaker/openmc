@@ -291,7 +291,7 @@ enum class TallyEvent { SURFACE, LATTICE, KILL, SCATTER, ABSORB };
 // These are kept as a normal enum and made negative, since variables which
 // store one of these enum values usually also may be responsible for storing
 // MT numbers from the long enum above.
-enum class TallyScore {
+enum TallyScore {
   SCORE_FLUX = -1,                // flux
   SCORE_TOTAL = -2,               // total reaction rate
   SCORE_SCATTER = -3,             // scattering rate
