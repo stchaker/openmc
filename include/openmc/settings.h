@@ -40,6 +40,7 @@ namespace settings {
 
 // Boolean flags
 extern bool assume_separate;      //!< assume tallies are spatially separate?
+extern "C" bool alpha_ifp;        //!< turn on alpha ifp calculation from keff run
 extern bool check_overlaps;       //!< check overlaps in geometry?
 extern bool confidence_intervals; //!< use confidence intervals for results?
 extern bool

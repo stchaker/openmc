@@ -327,6 +327,9 @@ class Settings:
         self._alpha_initalizer = None
         self._alpha_parameter = None
 
+        #Alpha Eigenvalue via IFP bool
+        self._alpha_ifp = None
+
         # Energy mode subelement
         self._energy_mode = None
         self._max_order = None
@@ -424,6 +427,15 @@ class Settings:
     def alpha_parameter(self, alpha_parameter: float):
         cv.check_type('alpha_parameter', alpha_parameter, float)
         self._alpha_parameter = alpha_parameter
+
+    @property
+    def alpha_ifp(self) -> bool:
+        return self._alpha_ifp
+    
+    @alpha_ifp.setter
+    def alpha_ifp(self, alpha_ifp: bool):
+        cv.check_type('alpha_ifp', alpha_ifp, bool)
+        self._alpha_ifp = alpha_ifp
 
     @property
     def run_mode(self) -> str:
@@ -1187,6 +1199,11 @@ class Settings:
             elem = ET.SubElement(root, "alpha_parameter")
             elem.text = str(self._alpha_parameter)
 
+    def _create_alpha_ifp_subelement(self, root):
+        if self._alpha_ifp is not None:
+            elem = ET.SubElement(root, "alpha_ifp")
+            elem.text = str(self._alpha_ifp)
+
     def _create_run_mode_subelement(self, root):
         elem = ET.SubElement(root, "run_mode")
         elem.text = self._run_mode.value
@@ -1648,6 +1665,13 @@ class Settings:
         else:
             self.alpha_parameter = 1.0
 
+    def _alpha_ifp_from_xml_element(self, root):
+        text = get_text(root, "alpha_ifp")
+        if text is not None:
+            self.alpha_ifp = bool(text)
+        else:
+            self.alpha_ifp = False
+
     def _run_mode_from_xml_element(self, root):
         text = get_text(root, 'run_mode')
         if text is not None:
@@ -2037,6 +2061,7 @@ class Settings:
         self._create_run_mode_subelement(element)
         self._create_alpha_initalizer_subelement(element)
         self._create_alpha_parameter_subelement(element)
+        self._create_alpha_ifp_subelement(element)
         self._create_particles_subelement(element)
         self._create_batches_subelement(element)
         self._create_inactive_subelement(element)
@@ -2146,6 +2171,7 @@ class Settings:
         settings._run_mode_from_xml_element(elem)
         settings._alpha_initalizer_from_xml_element(elem)
         settings._alpha_parameter_from_xml_element(elem)
+        settings._alpha_ifp_from_xml_element
         settings._particles_from_xml_element(elem)
         settings._batches_from_xml_element(elem)
         settings._inactive_from_xml_element(elem)

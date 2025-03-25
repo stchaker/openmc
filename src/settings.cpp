@@ -43,6 +43,7 @@ namespace settings {
 
 // Default values for boolean flags
 bool assume_separate {false};
+bool alpha_ifp {false};
 bool check_overlaps {false};
 bool cmfd_run {false};
 bool confidence_intervals {false};
@@ -1024,6 +1025,10 @@ void read_settings_xml(pugi::xml_node root)
     }
   }
 
+  if (check_for_node(root, "alpha_ifp")){
+    alpha_ifp = get_node_value_bool(root, "alpha_ifp");
+  }
+
   // Check for tabular_legendre options
   if (check_for_node(root, "tabular_legendre")) {
     // Get pointer to tabular_legendre node
@@ -1093,12 +1098,12 @@ void read_settings_xml(pugi::xml_node root)
 
   // read in initial alpha eigenvalue from file
   if (check_for_node(root, "alpha_initalizer")){
-    settings::alpha_initalizer = std::stod(get_node_value(root, "alpha_initalizer")); 
+    alpha_initalizer = std::stod(get_node_value(root, "alpha_initalizer")); 
   }
 
   // read in initial alpha parameter from file
   if (check_for_node(root, "alpha_parameter")){
-    settings::alpha_parameter = std::stod(get_node_value(root, "alpha_parameter")); 
+    alpha_parameter = std::stod(get_node_value(root, "alpha_parameter")); 
   }
 
   // read settings for weight windows value, this will override
