@@ -151,6 +151,8 @@ int openmc_finalize()
   simulation::need_depletion_rx = false;
   simulation::ssw_current_file = 1;
   simulation::total_gen = 0;
+  simulation::lambda_eff = 0.0;
+  simulation::lambda_eff_calculated = false;
 
   simulation::entropy_mesh = nullptr;
   simulation::ufs_mesh = nullptr;

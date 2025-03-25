@@ -21,6 +21,7 @@
 #include "openmc/state_point.h"
 #include "openmc/tallies/derivative.h"
 #include "openmc/tallies/filter.h"
+#include "openmc/tallies/tally_scoring.h"
 #include "openmc/tallies/tally.h"
 #include "openmc/tallies/trigger.h"
 #include "openmc/timer.h"
@@ -329,6 +330,8 @@ bool satisfy_triggers {false};
 int ssw_current_file;
 int total_gen {0};
 double total_weight;
+double lambda_eff {0.0};
+bool lambda_eff_calculated {false};
 int64_t work_per_rank;
 const RegularMesh* entropy_mesh {nullptr};
 const RegularMesh* ufs_mesh {nullptr};
@@ -353,6 +356,65 @@ double average_alpha(){
   }
   double avg = sum/counter;
   return avg;
+}
+
+// calculate the alpha eigenvalue from the ifp
+void calculate_alpha_ifp(){
+  bool ifp_num_time = false;
+  bool ifp_num_beta = false;
+  bool ifp_denom = false;
+  double num_time, num_time_stdv;
+  double num_beta, num_beta_stdv;
+  double denom, denom_stdv;
+
+  // loop through tallies, store results, otherwise, print a fatal error
+  for (auto i_tally = 0; i_tally < model::tallies.size(); i_tally++){
+
+    // Assign tally a value
+    const auto& tally {*model::tallies[i_tally]};
+
+    // Initialize Filter Matches Object
+    vector<FilterMatch> filter_matches;
+
+    // Allocate space for tally filter matches
+    filter_matches.resize(model::tally_filters.size());
+
+    // Loop over all filter bin combinations.
+    auto filter_iter = FilterBinIter(tally, false, &filter_matches);
+    auto end = FilterBinIter(tally, true, &filter_matches);
+
+    for (; filter_iter != end; ++filter_iter) {
+      auto filter_index = filter_iter.index_;
+
+      // loop through scores within the tally
+      for (auto i_score = 0; i_score < model::tallies[i_tally]->scores_.size(); i_score++){
+        // check for the correct tallies to be present and update the boolean checks
+        if (model::tallies[i_tally]->scores_[i_score] == static_cast<int>(TallyScore::SCORE_IFP_TIME_NUM)){
+          ifp_num_time = true;
+          std::tie(num_time, num_time_stdv) = mean_stdev(&tally.results_(filter_index, i_score, 0), tally.n_realizations_);
+        } else if (model::tallies[i_tally]->scores_[i_score] == static_cast<int>(TallyScore::SCORE_IFP_BETA_NUM)){
+          ifp_num_beta = true;
+          std::tie(num_beta, num_beta_stdv) = mean_stdev(&tally.results_(filter_index, i_score, 0), tally.n_realizations_);
+        } else if (model::tallies[i_tally]->scores_[i_score] == static_cast<int>(TallyScore::SCORE_IFP_DENOM)){
+          ifp_denom = true;
+          std::tie(denom, denom_stdv) = mean_stdev(&tally.results_(filter_index, i_score, 0), tally.n_realizations_);
+        }
+      }
+    }
+  }
+  // if the tallies are not present, print a fatal error
+  if (!ifp_num_time || !ifp_num_beta || !ifp_denom){
+    fatal_error("IFP tallies are not present in the simulation, cannot calculate the alpha eigenvalue.");
+  }
+
+  // calculate the simulations static reactivity
+  double rho = (simulation::keff - 1.0) / simulation::keff;
+  
+  // calculate the simulations static reactivity uncertainty
+  double rho_stdv = sqrt(pow((simulation::keff_std/simulation::keff),2) * 2);
+
+  // calculate the alpha eigenvalue
+
 }
 
 void allocate_banks()

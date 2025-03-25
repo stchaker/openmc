@@ -41,6 +41,8 @@ extern "C" bool satisfy_triggers;  //!< have tally triggers been satisfied?
 extern int ssw_current_file;       //!< current surface source file
 extern "C" int total_gen;          //!< total number of generations simulated
 extern double total_weight;        //!< Total source weight in a batch
+extern double lambda_eff;          //!< effective delayed neutron precursor decay constant
+extern "C" bool lambda_eff_calculated; //!< has lambda_eff been calculated?
 extern int64_t work_per_rank;      //!< number of particles per MPI rank
 
 extern const RegularMesh* entropy_mesh;
@@ -60,7 +62,10 @@ extern vector<int64_t> work_index;
 void allocate_banks();
 
 //! Calculate the current average alpha value
-double average_alpha(); 
+double average_alpha();
+
+//! Calculate the alpha eigenvalue from ifp 
+void calculate_alpha_ifp();
 
 //! Determine number of particles to transport per process
 void calculate_work();

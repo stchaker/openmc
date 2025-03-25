@@ -124,10 +124,13 @@ void alpha_production(Particle& p){
     p.wgt() *= (1 + ((settings::alpha_parameter * (abs(simulation::current_alpha)) / p.speed()) / p.macro_xs().total));
     // p.wgt() *= (1+settings::alpha_parameter)/settings::alpha_parameter; 
   } else if (!settings::survival_biasing){
-    double num_created = (1+settings::alpha_parameter)/settings::alpha_parameter;
+    double num_created_f = (1+settings::alpha_parameter)/settings::alpha_parameter;
     // particle creates two identical copies and stores into fission bank
     // particle is then absorbed
-    for(int i = 0; i < static_cast<int>(std::round(num_created)) - 1; ++i){ 
+
+    int num_created = static_cast<int>(num_created_f + prn(p.current_seed()));
+
+    for(int i = 0; i < num_created - 1; ++i){ 
       SourceSite site; 
       site.r = p.r();
       site.u = p.u();
@@ -138,25 +141,10 @@ void alpha_production(Particle& p){
       site.delayed_group = p.delayed_group();
       site.parent_id = p.id();
       site.progeny_id = p.n_progeny()++; 
-      int64_t idx = simulation::fission_bank.thread_safe_append(site); 
+
+      p.secondary_bank().push_back(site);
       
-      if (idx == -1) {
-        warning(
-          "The shared fission bank is full. Additional fission sites created "
-          "in this generation will not be banked.  may be "
-          "non-deterministic.");
-
-        // Decrement number of particle progeny as storage was unsuccessful.
-        // This step is needed so that the sum of all progeny is equal to the
-        // size of the shared fission bank.
-        p.n_progeny()--;
-
-        // Break out of loop as no more sites can be added to fission bank
-        break;
-      }
-      p.wgt() = 0.0;
-      p.event() = TallyEvent::ABSORB;
-      p.event_mt() = N_2N;
+      // p.event_mt() = N_2N;
     }
   }
 }
