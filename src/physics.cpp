@@ -121,7 +121,8 @@ void alpha_production(Particle& p){
 
   // If the particle is undergoing survival biasing its weight is doubled. Otherwise, an explicit absorption which produces two neutrons is done.
   if (settings::survival_biasing) {
-    p.wgt() *= (1+settings::alpha_parameter)/settings::alpha_parameter; 
+    p.wgt() *= (1 + (((abs(simulation::current_alpha)) / p.speed()) / p.macro_xs().total));
+    // p.wgt() *= (1+settings::alpha_parameter)/settings::alpha_parameter; 
   } else if (!settings::survival_biasing){
     double num_created = (1+settings::alpha_parameter)/settings::alpha_parameter;
     // particle creates two identical copies and stores into fission bank
@@ -209,9 +210,7 @@ void sample_neutron_reaction(Particle& p)
     if (settings::run_mode == RunMode::ALPHA && simulation::current_alpha >= 0 ) {
       alpha_absorption(p, i_nuclide);
     } else if (settings::run_mode == RunMode::ALPHA && simulation::current_alpha < 0) {
-      if (prn(p.current_seed()) * p.macro_xs().total < (settings::alpha_parameter * abs(simulation::current_alpha) / p.speed())) {
-        alpha_production(p);
-      }
+      alpha_production(p);
     }
   }
 
