@@ -121,7 +121,7 @@ void alpha_production(Particle& p){
 
   // If the particle is undergoing survival biasing its weight is doubled. Otherwise, an explicit absorption which produces two neutrons is done.
   if (settings::survival_biasing) {
-    p.wgt() *= (1 + (((abs(simulation::current_alpha)) / p.speed()) / p.macro_xs().total));
+    p.wgt() *= (1 + ((settings::alpha_parameter * (abs(simulation::current_alpha)) / p.speed()) / p.macro_xs().total));
     // p.wgt() *= (1+settings::alpha_parameter)/settings::alpha_parameter; 
   } else if (!settings::survival_biasing){
     double num_created = (1+settings::alpha_parameter)/settings::alpha_parameter;
