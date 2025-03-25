@@ -140,7 +140,6 @@ void alpha_production(Particle& p){
       site.particle = ParticleType::neutron;
       site.delayed_group = p.delayed_group();
       site.parent_id = p.id();
-      site.progeny_id = p.n_progeny()++; 
 
       p.secondary_bank().push_back(site);
       
