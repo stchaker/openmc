@@ -114,19 +114,24 @@ void alpha_production(Particle& p){
   // For negative alphas this interaction becomes a 2*delta production reaction with 2 particles added as secondaries
   // Stored sites are literal copies of the particle undergoing this reaction
 
+  // The algorithm here is based on the TRIPOLI-4.10.2 implementation of the alpha-eigenvalue method
+
+  // Unique uniform weight increases are done in place of the traditional 2* weight increase
+  // When survival biasing is turned on. 
+
   // Check to make sure alpha mode is on
   if(settings::run_mode != RunMode::ALPHA){
     fatal_error("Alpha collisions are being invoked but the alpha-eigenvalue method is not turned on!");
   }
 
-  // If the particle is undergoing survival biasing its weight is doubled. Otherwise, an explicit absorption which produces two neutrons is done.
+  // If the particle is undergoing survival biasing its weight is increased according to the probability of the interaction occuring
+  // Otherwise, an explicit absorption which producesa number of secondaries is done.
   if (settings::survival_biasing) {
     p.wgt() *= (1 + ((settings::alpha_parameter * (abs(simulation::current_alpha)) / p.speed()) / p.macro_xs().total));
     // p.wgt() *= (1+settings::alpha_parameter)/settings::alpha_parameter; 
-  } else if (!settings::survival_biasing){
+  } else { 
     double num_created_f = (1+settings::alpha_parameter)/settings::alpha_parameter;
-    // particle creates two identical copies and stores into fission bank
-    // particle is then absorbed
+    // particle has a number of particles created and then stored into the secondary bank
 
     int num_created = static_cast<int>(num_created_f + prn(p.current_seed()));
 
