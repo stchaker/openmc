@@ -22,6 +22,7 @@ constexpr int STATUS_EXIT_ON_TRIGGER {2};
 
 namespace simulation {
 
+extern "C" double alpha_ifp_value; //!< alpha eigenvalue from IFP-alpha method
 extern "C" double current_alpha; //!< current alpha eigenvalue
 extern "C" int current_batch; //!< current batch
 extern "C" int current_gen;   //!< current fission generation
@@ -66,6 +67,9 @@ double average_alpha();
 
 //! Calculate the alpha eigenvalue from ifp 
 void calculate_alpha_ifp();
+
+//! Calculate the effective delayed neutron precursor decay constant
+void calculate_lambda_eff(Particle& p);
 
 //! Determine number of particles to transport per process
 void calculate_work();

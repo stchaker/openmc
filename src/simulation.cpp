@@ -243,6 +243,11 @@ int openmc_simulation_finalize()
   // Reset flags
   simulation::initialized = false;
   return 0;
+
+  // Dump the value of the effective lambda to the terminal
+  if (simulation::lambda_eff_calculated){
+    write_message("Effective lambda: " + std::to_string(simulation::lambda_eff), 6);
+  }
 }
 
 int openmc_next_batch(int* status)
@@ -313,6 +318,7 @@ namespace openmc {
 
 namespace simulation {
 
+double alpha_ifp_value = {0.0};
 double current_alpha = 0.0;
 int current_batch;
 int current_gen;
@@ -407,14 +413,67 @@ void calculate_alpha_ifp(){
     fatal_error("IFP tallies are not present in the simulation, cannot calculate the alpha eigenvalue.");
   }
 
-  // calculate the simulations static reactivity
-  double rho = (simulation::keff - 1.0) / simulation::keff;
+  // calculate kinetic parameters from tallies and from the simulation keff and lambda_eff
+  const double beta_eff = num_beta / denom;
+  const double mgt = num_time / denom;
+  const double rho = (simulation::keff - 1.0) / simulation::keff;
+  const double lambda_eff = simulation::lambda_eff;
   
   // calculate the simulations static reactivity uncertainty
   double rho_stdv = sqrt(pow((simulation::keff_std/simulation::keff),2) * 2);
 
   // calculate the alpha eigenvalue
+  
 
+}
+
+void calculate_lambda_eff(Particle& p) {
+  // Uses inverse beta weighting to calculate the effective delayed neutron precursor decay constant
+  // Function requires a particle as particle energy is necessary to sample the delayed yield
+  // It is assumed that the particle is a neutron and that its energy is representative of the system.
+
+  vector<double> lambda_eff_nuclide;
+  vector<double> nuclide_atom_percent;
+  double fissionable_atom_density = 0.0;
+
+  // Loop over materials and then nuclides within the material
+  for (const auto& mat : model::materials) {
+    // First we loop over all nuclides and store the atom density of only the fissionable nuclides to the sum
+    for (int i_nuclide : mat->nuclide_) {
+      const auto& nuc = data::nuclides[i_nuclide];
+      if(nuc->fissionable_){
+        fissionable_atom_density += mat->atom_density_[i_nuclide];
+      }
+    }
+  }
+
+  // Now we loop over all nuclides in materials and if fissionable, we calculate the effective decay constant
+  // We then append the atom density of the nuclide to the vector by dividing the atom density by the total fissionable atom density
+  for (const auto& mat : model::materials) {
+    for (int i_nuclide : mat->nuclide_) {
+      const auto& nuc = data::nuclides[i_nuclide];
+      if(nuc->fissionable_){
+        const auto& rx = nuc->fission_rx_[0]; 
+        // Loop on the number of delayed neutron precursors
+        double beta_eff = 0.0;
+        double inverse_beta = 0.0;
+        for (int i = 0; i < nuc->n_precursor_; ++i) {
+          // Calculate the effective decay constant for each delayed neutron precursor
+          // this is done through inverse beta weighting for each fissionable nuclide
+          const auto& product = rx->products_[i];
+          inverse_beta += (*product.yield_)(p.E()) / product.decay_rate_; 
+          beta_eff += (*product.yield_)(p.E());
+        }
+        // append to the lambda_eff_nuclide vector and append the atom percent of the nuclide to the nuclide_atom_percent vector
+        lambda_eff_nuclide.push_back(beta_eff / inverse_beta);
+        nuclide_atom_percent.push_back(mat->atom_density_[i_nuclide] / fissionable_atom_density);
+      }
+    }
+  }
+
+  // Calculate the effective decay constant for the entire simulation, signal that this process executed successfully
+  simulation::lambda_eff = std::inner_product(lambda_eff_nuclide.begin(), lambda_eff_nuclide.end(), nuclide_atom_percent.begin(), 0.0);
+  simulation::lambda_eff_calculated = true;
 }
 
 void allocate_banks()

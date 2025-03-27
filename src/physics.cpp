@@ -286,6 +286,12 @@ void create_fission_sites(Particle& p, int i_nuclide, const Reaction& rx)
   // the expected number of fission sites produced
   double weight = settings::ufs_on ? ufs_get_weight(p) : 1.0;
 
+  // Use this interaction as an opportunity to sample the effective delayed
+  // neutron precursor decay constant
+  if (!simulation::lambda_eff_calculated) {
+    calculate_lambda_eff(p);
+  }
+
   // Determine the expected number of neutrons produced
   double nu_t = p.wgt() / simulation::keff * weight *
                 p.neutron_xs(i_nuclide).nu_fission /
