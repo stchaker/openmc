@@ -286,12 +286,6 @@ void create_fission_sites(Particle& p, int i_nuclide, const Reaction& rx)
   // the expected number of fission sites produced
   double weight = settings::ufs_on ? ufs_get_weight(p) : 1.0;
 
-  // Use this interaction as an opportunity to sample the effective delayed
-  // neutron precursor decay constant
-  if (!simulation::lambda_eff_calculated) {
-    calculate_lambda_eff(p);
-  }
-
   // Determine the expected number of neutrons produced
   double nu_t = p.wgt() / simulation::keff * weight *
                 p.neutron_xs(i_nuclide).nu_fission /
@@ -1164,6 +1158,7 @@ void sample_fission_neutron(
   double nu_t = nuc->nu(E_in, Nuclide::EmissionMode::total);
   double nu_d = nuc->nu(E_in, Nuclide::EmissionMode::delayed);
   // update the delayed fission sampling parameter with the alpha delayed contribution if alpha mode is on.
+  /*
   if (settings::run_mode == RunMode::ALPHA){
     double alpha_sum = 0.0;
     for(int i; i < nuc->n_precursor_; ++i){
@@ -1171,6 +1166,7 @@ void sample_fission_neutron(
     }
     nu_d *= alpha_sum;
   }
+    */
 
   double beta = nu_d / nu_t;
 

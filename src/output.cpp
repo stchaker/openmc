@@ -582,6 +582,10 @@ void print_results()
     std::tie(mean, stdev) = mean_stdev(&gt(GlobalTally::LEAKAGE, 0), n);
     fmt::print(
       " Leakage Fraction            = {:.5f} +/- {:.5f}\n", mean, t_n1 * stdev);
+      // print effective delayed neutron precursor decay constant
+    if(simulation::lambda_eff_calculated && settings::alpha_ifp){
+      fmt::print(" Effective delayed neutron precursor decay constant = {:.5f} \n", simulation::lambda_eff);
+    }
   } else {
     if (mpi::master)
       warning("Could not compute uncertainties -- only one "
@@ -600,6 +604,7 @@ void print_results()
     }
     fmt::print(" Leakage Fraction           = {:.5f}\n",
       gt(GlobalTally::LEAKAGE, TallyResult::SUM) / n);
+
   }
   fmt::print("\n");
   std::fflush(stdout);

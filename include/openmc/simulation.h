@@ -69,7 +69,7 @@ double average_alpha();
 void calculate_alpha_ifp();
 
 //! Calculate the effective delayed neutron precursor decay constant
-void calculate_lambda_eff(Particle& p);
+void calculate_lambda_eff();
 
 //! Determine number of particles to transport per process
 void calculate_work();
