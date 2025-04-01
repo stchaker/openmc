@@ -415,11 +415,17 @@ void print_generation()
     fmt::print("   {:8.5f} +/-{:8.5f}", simulation::keff, simulation::keff_std);
   }
 
-  if(settings::run_mode == RunMode::ALPHA && n <= 1){
+  if(settings::run_mode == RunMode::ALPHA && n <= 1 && simulation::alpha_initialized){
     fmt::print("                              {:8.5f}", simulation::current_alpha/1E6);
   }
 
-  if (settings::run_mode == RunMode::ALPHA && n > 1){
+  if (settings::run_mode == RunMode::ALPHA && n > 1 &&  simulation::alpha_bank_initialized) {
+    if(simulation::alpha_bank.empty()){
+      fmt::print("       {:8.5f}", simulation::current_alpha/1E6);
+    } else {
+    fmt::print("       {:8.5f}                {:8.5f},", simulation::current_alpha/1E6, average_alpha()/1E6 );
+    }
+  } else if (settings::run_mode == RunMode::ALPHA && n > 1 && simulation::alpha_initialized) {
     if(simulation::alpha_bank.empty()){
       fmt::print("       {:8.5f}", simulation::current_alpha/1E6);
     } else {

@@ -121,14 +121,20 @@ void alpha_production(Particle& p){
 
   // If the particle is undergoing survival biasing its weight is doubled. Otherwise, an explicit absorption which produces two neutrons is done.
   if (settings::survival_biasing) {
-    p.wgt() *= (1 + ((settings::alpha_parameter * (abs(simulation::current_alpha)) / p.speed()) / p.macro_xs().total));
-    // p.wgt() *= (1+settings::alpha_parameter)/settings::alpha_parameter; 
-  } else if (!settings::survival_biasing){
-    double num_created = (1+settings::alpha_parameter)/settings::alpha_parameter;
-    // particle creates two identical copies and stores into fission bank
-    // particle is then absorbed
-    for(int i = 0; i < static_cast<int>(std::round(num_created)) - 1; ++i){ 
-      SourceSite site; 
+    const double wgt_created = p.wgt() * ((settings::alpha_parameter * (abs(simulation::current_alpha)) / p.speed()) / p.macro_xs().total);
+
+    // Adjust weight of particle by probability of production
+    p.wgt() += wgt_created;
+    
+  } else {
+    double num_created_f = (1 + settings::alpha_parameter) / settings::alpha_parameter;
+    // particle has a number of particles created and then stored into the
+    // secondary bank
+
+    int num_created = static_cast<int>(num_created_f + prn(p.current_seed()));
+
+    for (int i = 0; i < num_created - 1; ++i) {
+      SourceSite site;
       site.r = p.r();
       site.u = p.u();
       site.E = p.E();
@@ -137,56 +143,13 @@ void alpha_production(Particle& p){
       site.particle = ParticleType::neutron;
       site.delayed_group = p.delayed_group();
       site.parent_id = p.id();
-      site.progeny_id = p.n_progeny()++; 
-      int64_t idx = simulation::fission_bank.thread_safe_append(site); 
-      
-      if (idx == -1) {
-        warning(
-          "The shared fission bank is full. Additional fission sites created "
-          "in this generation will not be banked.  may be "
-          "non-deterministic.");
 
-        // Decrement number of particle progeny as storage was unsuccessful.
-        // This step is needed so that the sum of all progeny is equal to the
-        // size of the shared fission bank.
-        p.n_progeny()--;
+      p.secondary_bank().push_back(site);
 
-        // Break out of loop as no more sites can be added to fission bank
-        break;
-      }
-      p.wgt() = 0.0;
-      p.event() = TallyEvent::ABSORB;
-      p.event_mt() = N_2N;
+      // p.event_mt() = N_2N;
     }
   }
 }
-
-/*
-void alpha_production_2(Particle& p){
-    // For negative alphas this interaction becomes a 2*delta production reaction with 2 particles added as secondaries
-  // Stored sites are literal copies of the particle undergoing this reaction
-
-  // Check to make sure alpha mode is on
-  if(settings::run_mode != RunMode::ALPHA){
-    fatal_error("Alpha collisions are being invoked but the alpha-eigenvalue method is not turned on!");
-  }
-
-  // If the particle is undergoing survival biasing its weight is doubled. Otherwise, an explicit absorption which produces two neutrons is done.
-  if (settings::survival_biasing) {
-    p.wgt() *= (1+settings::alpha_parameter)/settings::alpha_parameter; 
-  } else if (!settings::survival_biasing){
-    double num_created = (1+settings::alpha_parameter)/settings::alpha_parameter;
-    // particle creates two identical secondaries, then is absorbed.
-    for(int i = 0; i < static_cast<int>(std::round(num_created)) - 1; ++i){ 
-      p.create_secondary(p.wgt(), p.u(), p.E(), p.type()); 
-    }
-          
-    p.wgt() = 0.0;
-    p.event() = TallyEvent::ABSORB;
-    p.event_mt() = N_2N;
-  }
-}
-*/
 
 void sample_neutron_reaction(Particle& p)
 {
@@ -1168,7 +1131,7 @@ void sample_fission_neutron(
   // update the delayed fission sampling parameter with the alpha delayed contribution if alpha mode is on.
   if (settings::run_mode == RunMode::ALPHA){
     double alpha_sum = 0.0;
-    for(int i; i < nuc->n_precursor_; ++i){
+    for(int i=1; i < nuc->n_precursor_ + 1; ++i){
       alpha_sum += (rx.products_[i].decay_rate_) / (rx.products_[i].decay_rate_ + simulation::current_alpha);
     }
     nu_d *= alpha_sum;

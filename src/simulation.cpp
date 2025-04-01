@@ -91,12 +91,6 @@ int openmc_simulation_init()
   // Allocate source, fission and surface source banks.
   allocate_banks();
 
-  // If we are running an alpha-eigenvalue simulation, set the value of the simulation alpha to the initalized value from the user. 
-  if (settings::run_mode == RunMode::ALPHA){
-    simulation::current_alpha = settings::alpha_initalizer;
-  }
-  
-
   // Create track file if needed
   if (!settings::track_identifiers.empty() || settings::write_all_tracks) {
     open_track_file();
@@ -326,6 +320,8 @@ int n_lost_particles {0};
 bool need_depletion_rx {false};
 int restart_batch;
 bool satisfy_triggers {false};
+bool alpha_initialized {false};
+bool alpha_bank_initialized {false};
 int ssw_current_file;
 int total_gen {0};
 double total_weight;
@@ -394,6 +390,17 @@ void initialize_batch()
   // Reset total starting particle weight used for normalizing tallies
   simulation::total_weight = 0.0;
 
+  // Determine if to start integrating the alpha guess into the problem
+  // this only happens when the simulation keff is sufficiently converged
+  // and the batch is not the first batch
+  if (settings::run_mode == RunMode::ALPHA && !simulation::alpha_initialized) {
+    if (simulation::current_batch > settings::n_inactive && simulation::keff_std < 0.01) {
+        // If we are running an alpha-eigenvalue simulation, set the value of the simulation alpha to the initalized value from the user. 
+      simulation::current_alpha = settings::alpha_initalizer;
+      simulation::alpha_initialized = true;
+    }
+  }
+
   // Determine if this batch is the first inactive or active batch.
   bool first_inactive = false;
   bool first_active = false;
@@ -428,7 +435,7 @@ void finalize_batch()
   simulation::time_tallies.stop();
 
   // perform alpha-k update if needed
-  if (settings::run_mode == RunMode::ALPHA){
+  if (settings::run_mode == RunMode::ALPHA && simulation::alpha_initialized) {
     double alpha_new = 0.0;
     double alpha_std = 0.0; 
     int idx = overall_generation() - 2;
@@ -555,9 +562,10 @@ void finalize_generation()
 {
   auto& gt = simulation::global_tallies;
 
-  if (settings::run_mode == RunMode::ALPHA) {
-    // only store into alpha bank during active batches to get good statistics on alpha
-    if(simulation::current_batch > settings::n_inactive) {
+  if (settings::run_mode == RunMode::ALPHA && simulation::alpha_initialized) {
+    // only store into alpha bank during sufficiently converged keff-values - assume alpha has been converged after 20 alpha uses
+    if(alpha_bank.size() > 20){ 
+      simulation::alpha_bank_initialized = true;
       simulation::alpha_bank.emplace_back(simulation::current_alpha);
     }
   }
