@@ -558,6 +558,10 @@ void print_results()
         fmt::print(" Combined k-effective        = {:.5f} +/- {:.5f}\n",
           k_combined[0], k_combined[1]);
       }
+      if (settings::alpha_ifp) {
+        fmt::print(" Alpha eigenvalue            = {:.5f}\n",
+          simulation::alpha_ifp_value);
+      }
     }
     std::tie(mean, stdev) = mean_stdev(&gt(GlobalTally::LEAKAGE, 0), n);
     fmt::print(
@@ -574,6 +578,10 @@ void print_results()
         gt(GlobalTally::K_TRACKLENGTH, TallyResult::SUM) / n);
       fmt::print(" k-effective (Absorption)   = {:.5f}\n",
         gt(GlobalTally::K_ABSORPTION, TallyResult::SUM) / n);
+      if(settings::alpha_ifp) {
+        fmt::print(" Alpha eigenvalue           = {:.5f}\n",
+          simulation::alpha_ifp_value);
+      }
     }
     fmt::print(" Leakage Fraction           = {:.5f}\n",
       gt(GlobalTally::LEAKAGE, TallyResult::SUM) / n);

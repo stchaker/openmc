@@ -1032,7 +1032,7 @@ void sample_fission_neutron(
   double E_in = p.E();
   uint64_t* seed = p.current_seed();
 
-  // Determine total nu, delayed nu, and delayed neutron fraction -- account for alpha eigenvalue mode modification to the nu_d term
+  // Determine total nu, delayed nu, and delayed neutron fraction
   const auto& nuc {data::nuclides[i_nuclide]};
   double nu_t = nuc->nu(E_in, Nuclide::EmissionMode::total);
   double nu_d = nuc->nu(E_in, Nuclide::EmissionMode::delayed);

@@ -175,7 +175,7 @@ int openmc_simulation_finalize()
   if (!simulation::initialized)
     return 0;
 
-  // Calaculate effective delayed neutron precursor decay constant if alpha_ifp is on
+  // Calaculate the alpha eigenvalue from the alpha-ifp method if requested
   if (settings::alpha_ifp && settings::run_mode == RunMode::EIGENVALUE) {
     calculate_alpha_ifp();
   }
@@ -388,15 +388,25 @@ void calculate_alpha_ifp(){
   const double beta_eff = num_beta / denom;
   const double mgt = num_time / denom;
   const double rho = (simulation::keff - 1.0) / simulation::keff;
+  calculate_lambda_eff();
   const double lambda_eff = simulation::lambda_eff;
   
   // calculate the simulations static reactivity uncertainty
   double rho_stdv = sqrt(pow((simulation::keff_std/simulation::keff),2) * 2);
 
   // calculate the alpha eigenvalue from IFP tallied values
-  
+  double alpha_0 = ((((rho - beta_eff) / mgt) - lambda_eff) + sqrt((((rho - beta_eff) / mgt) - lambda_eff) * (((rho - beta_eff) / mgt) - lambda_eff) + 4*lambda_eff*rho/mgt)) / 2;
+  double alpha_1 = ((((rho - beta_eff) / mgt) - lambda_eff) - sqrt((((rho - beta_eff) / mgt) - lambda_eff) * (((rho - beta_eff) / mgt) - lambda_eff) + 4*lambda_eff*rho/mgt)) / 2;
 
-}
+  // determine the fundamental mode of the alpha eigenvalue by searching for the most positive of the two roots 
+  if(alpha_0 > alpha_1){
+    simulation::alpha_ifp_value = alpha_0;
+  } else if (alpha_1 > alpha_0){
+    simulation::alpha_ifp_value = alpha_1;
+  } else {
+      fatal_error("Alpha IFP calculation resulted in two equal roots, cannot determine the fundamental mode.");
+    }
+  }
 
 void calculate_lambda_eff() {
   #pragma omp master
