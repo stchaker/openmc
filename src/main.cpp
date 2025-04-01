@@ -32,7 +32,6 @@ int main(int argc, char* argv[])
   switch (settings::run_mode) {
   case RunMode::FIXED_SOURCE:
   case RunMode::EIGENVALUE:
-  case RunMode::ALPHA:
     switch (settings::solver_type) {
     case SolverType::MONTE_CARLO:
       err = openmc_run();

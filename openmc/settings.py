@@ -21,7 +21,6 @@ from .weight_windows import WeightWindows, WeightWindowGenerator
 class RunMode(Enum):
     EIGENVALUE = 'eigenvalue'
     FIXED_SOURCE = 'fixed source'
-    ALPHA = 'alpha eigenvalue'
     PLOT = 'plot'
     VOLUME = 'volume'
     PARTICLE_RESTART = 'particle restart'
@@ -323,10 +322,6 @@ class Settings:
         self._particles = None
         self._keff_trigger = None
 
-        # Alpha Eigenvalue initializer
-        self._alpha_initalizer = None
-        self._alpha_parameter = None
-
         #Alpha Eigenvalue via IFP bool
         self._alpha_ifp = None
 
@@ -409,24 +404,6 @@ class Settings:
 
         for key, value in kwargs.items():
             setattr(self, key, value)
-
-    @property 
-    def alpha_initalizer(self) -> float:
-        return self._alpha_initalizer.value
-    
-    @alpha_initalizer.setter
-    def alpha_initalizer(self, alpha_initalizer: float):
-        cv.check_type('alpha_initalizer', alpha_initalizer, float)
-        self._alpha_initalizer = alpha_initalizer
-
-    @property
-    def alpha_parameter(self) -> float:
-        return self._alpha_parameter
-    
-    @alpha_parameter.setter
-    def alpha_parameter(self, alpha_parameter: float):
-        cv.check_type('alpha_parameter', alpha_parameter, float)
-        self._alpha_parameter = alpha_parameter
 
     @property
     def alpha_ifp(self) -> bool:
@@ -1189,16 +1166,6 @@ class Settings:
 
         self._random_ray = random_ray
         
-    def _create_alpha_initalizer_subelement(self, root):
-        if self._alpha_initalizer is not None:
-            elem = ET.SubElement(root, "alpha_initalizer")
-            elem.text = str(self._alpha_initalizer)
-
-    def _create_alpha_parameter_subelement(self, root):
-        if self._alpha_parameter is not None:
-            elem = ET.SubElement(root, "alpha_parameter")
-            elem.text = str(self._alpha_parameter)
-
     def _create_alpha_ifp_subelement(self, root):
         if self._alpha_ifp is not None:
             elem = ET.SubElement(root, "alpha_ifp")
@@ -1651,20 +1618,6 @@ class Settings:
             self._max_write_lost_particles_from_xml_element(elem)
             self._generations_per_batch_from_xml_element(elem)
 
-    def _alpha_initalizer_from_xml_element(self, root):
-        text = get_text(root, "alpha_initalizer")
-        if text is not None:
-            self.alpha_initalizer = float(text)
-        else:
-            self.alpha_initializer = 0.0
-    
-    def _alpha_parameter_from_xml_element(self, root):
-        text = get_text(root, "alpha_parameter")
-        if text is not None:
-            self.alpha_parameter = float(text)
-        else:
-            self.alpha_parameter = 1.0
-
     def _alpha_ifp_from_xml_element(self, root):
         text = get_text(root, "alpha_ifp")
         if text is not None:
@@ -2059,8 +2012,6 @@ class Settings:
         element = ET.Element("settings")
 
         self._create_run_mode_subelement(element)
-        self._create_alpha_initalizer_subelement(element)
-        self._create_alpha_parameter_subelement(element)
         self._create_alpha_ifp_subelement(element)
         self._create_particles_subelement(element)
         self._create_batches_subelement(element)
@@ -2169,8 +2120,6 @@ class Settings:
         settings = cls()
         settings._eigenvalue_from_xml_element(elem)
         settings._run_mode_from_xml_element(elem)
-        settings._alpha_initalizer_from_xml_element(elem)
-        settings._alpha_parameter_from_xml_element(elem)
         settings._alpha_ifp_from_xml_element
         settings._particles_from_xml_element(elem)
         settings._batches_from_xml_element(elem)

@@ -89,97 +89,6 @@ void collision(Particle& p)
   }
 }
 
-void alpha_absorption(Particle& p, int i_nuclide){
-  // Check to make sure alpha mode is on
-  if(settings::run_mode != RunMode::ALPHA){
-    fatal_error("Alpha collisions are being invoked but the alpha-eigenvalue method is not turned on!");
-  }
-
-  if (settings::survival_biasing) {
-    // Determine weight absorbed in survival biasing with alpha
-    const double wgt_absorb = p.wgt() * ((settings::alpha_parameter * abs(simulation::current_alpha) / p.speed()) / p.macro_xs().total);
-  
-    // Adjust weight of particle by probability of absorption
-    p.wgt() -= wgt_absorb;
-  
-    // Perform an explicit absorption with alpha
-  } else {
-    p.wgt() = 0.0;
-    p.event() = TallyEvent::ABSORB;
-    p.event_mt() = N_DISAPPEAR;
-  }
-}
-
-void alpha_production(Particle& p){
-  // For negative alphas this interaction becomes a 2*delta production reaction with 2 particles added as secondaries
-  // Stored sites are literal copies of the particle undergoing this reaction
-
-  // The algorithm here is based on the TRIPOLI-4.10.2 implementation of the alpha-eigenvalue method
-
-  // Unique uniform weight increases are done in place of the traditional 2* weight increase
-  // When survival biasing is turned on. 
-
-  // Check to make sure alpha mode is on
-  if(settings::run_mode != RunMode::ALPHA){
-    fatal_error("Alpha collisions are being invoked but the alpha-eigenvalue method is not turned on!");
-  }
-
-  // If the particle is undergoing survival biasing its weight is increased according to the probability of the interaction occuring
-  // Otherwise, an explicit absorption which producesa number of secondaries is done.
-  if (settings::survival_biasing) {
-    p.wgt() *= (1 + ((settings::alpha_parameter * (abs(simulation::current_alpha)) / p.speed()) / p.macro_xs().total));
-    // p.wgt() *= (1+settings::alpha_parameter)/settings::alpha_parameter; 
-  } else { 
-    double num_created_f = (1+settings::alpha_parameter)/settings::alpha_parameter;
-    // particle has a number of particles created and then stored into the secondary bank
-
-    int num_created = static_cast<int>(num_created_f + prn(p.current_seed()));
-
-    for(int i = 0; i < num_created - 1; ++i){ 
-      SourceSite site; 
-      site.r = p.r();
-      site.u = p.u();
-      site.E = p.E();
-      site.time = p.time();
-      site.wgt = p.wgt();
-      site.particle = ParticleType::neutron;
-      site.delayed_group = p.delayed_group();
-      site.parent_id = p.id();
-
-      p.secondary_bank().push_back(site);
-      
-      // p.event_mt() = N_2N;
-    }
-  }
-}
-
-/*
-void alpha_production_2(Particle& p){
-    // For negative alphas this interaction becomes a 2*delta production reaction with 2 particles added as secondaries
-  // Stored sites are literal copies of the particle undergoing this reaction
-
-  // Check to make sure alpha mode is on
-  if(settings::run_mode != RunMode::ALPHA){
-    fatal_error("Alpha collisions are being invoked but the alpha-eigenvalue method is not turned on!");
-  }
-
-  // If the particle is undergoing survival biasing its weight is doubled. Otherwise, an explicit absorption which produces two neutrons is done.
-  if (settings::survival_biasing) {
-    p.wgt() *= (1+settings::alpha_parameter)/settings::alpha_parameter; 
-  } else if (!settings::survival_biasing){
-    double num_created = (1+settings::alpha_parameter)/settings::alpha_parameter;
-    // particle creates two identical secondaries, then is absorbed.
-    for(int i = 0; i < static_cast<int>(std::round(num_created)) - 1; ++i){ 
-      p.create_secondary(p.wgt(), p.u(), p.E(), p.type()); 
-    }
-          
-    p.wgt() = 0.0;
-    p.event() = TallyEvent::ABSORB;
-    p.event_mt() = N_2N;
-  }
-}
-*/
-
 void sample_neutron_reaction(Particle& p)
 {
   // Sample a nuclide within the material
@@ -187,36 +96,6 @@ void sample_neutron_reaction(Particle& p)
 
   // Save which nuclide particle had collision with
   p.event_nuclide() = i_nuclide;
-
-  // Determine if an alpha interaction for this collision event.
-  
-  if(!settings::survival_biasing){
-    if (prn(p.current_seed()) * p.macro_xs().total < (settings::alpha_parameter * abs(simulation::current_alpha) / p.speed())) {
-     if (simulation::current_alpha >= 0) {
-        alpha_absorption(p, i_nuclide);
-      } else {
-        alpha_production(p);
-      }
-    }
-  } else {
-    if (settings::run_mode == RunMode::ALPHA && simulation::current_alpha >= 0 ) {
-      alpha_absorption(p, i_nuclide);
-    } else if (settings::run_mode == RunMode::ALPHA && simulation::current_alpha < 0) {
-      alpha_production(p);
-    }
-  }
-
-  // Apply weight windows here if running on alpha mode to ensure that alpha production 
-  // and absorption interactions do not cause unbounded growth or decay.
-
-  if(settings::run_mode == RunMode::ALPHA && settings::weight_window_checkpoint_collision){
-    apply_weight_windows(p);
-  }
-
-  // If particle was absorbed, return, as it does not need to contribute to other interactions
-  if(!p.alive()){
-    return; 
-  }
 
   // Create fission bank sites. Note that while a fission reaction is sampled,
   // it never actually "happens", i.e. the weight of the particle does not
@@ -227,7 +106,7 @@ void sample_neutron_reaction(Particle& p)
 
   if (nuc->fissionable_ && p.neutron_xs(i_nuclide).fission > 0.0) {
     auto& rx = sample_fission(i_nuclide, p);
-    if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+    if (settings::run_mode == RunMode::EIGENVALUE) {
       create_fission_sites(p, i_nuclide, rx);
     } else if (settings::run_mode == RunMode::FIXED_SOURCE &&
                settings::create_fission_neutrons) {
@@ -312,7 +191,7 @@ void create_fission_sites(Particle& p, int i_nuclide, const Reaction& rx)
   // Determine whether to place fission sites into the shared fission bank
   // or the secondary particle bank.
   bool use_fission_bank = false;
-  if(settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA){
+  if(settings::run_mode == RunMode::EIGENVALUE){
     use_fission_bank = true;
   }
   //bool use_fission_bank = (settings::run_mode == RunMode::EIGENVALUE);
@@ -604,7 +483,7 @@ void sample_positron_reaction(Particle& p)
 int sample_nuclide(Particle& p)
 {
   // Sample cumulative distribution function
-  double cutoff = prn(p.current_seed()) * (p.macro_xs().total - (settings::alpha_parameter * abs(simulation::current_alpha)/p.speed()));
+  double cutoff = prn(p.current_seed()) * (p.macro_xs().total);
 
   // Get pointers to nuclide/density arrays
   const auto& mat {model::materials[p.material()]};
@@ -754,7 +633,7 @@ void absorption(Particle& p, int i_nuclide)
     p.wgt() -= wgt_absorb;
 
     // Score implicit absorption estimate of keff
-    if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+    if (settings::run_mode == RunMode::EIGENVALUE) {
       p.keff_tally_absorption() += wgt_absorb *
                                    p.neutron_xs(i_nuclide).nu_fission /
                                    p.neutron_xs(i_nuclide).absorption;
@@ -764,7 +643,7 @@ void absorption(Particle& p, int i_nuclide)
     if (p.neutron_xs(i_nuclide).absorption >
         prn(p.current_seed()) * p.neutron_xs(i_nuclide).total) {
       // Score absorption estimate of keff
-      if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+      if (settings::run_mode == RunMode::EIGENVALUE) {
         p.keff_tally_absorption() += p.wgt() *
                                      p.neutron_xs(i_nuclide).nu_fission /
                                      p.neutron_xs(i_nuclide).absorption;
@@ -1157,17 +1036,6 @@ void sample_fission_neutron(
   const auto& nuc {data::nuclides[i_nuclide]};
   double nu_t = nuc->nu(E_in, Nuclide::EmissionMode::total);
   double nu_d = nuc->nu(E_in, Nuclide::EmissionMode::delayed);
-  // update the delayed fission sampling parameter with the alpha delayed contribution if alpha mode is on.
-  /*
-  if (settings::run_mode == RunMode::ALPHA){
-    double alpha_sum = 0.0;
-    for(int i; i < nuc->n_precursor_; ++i){
-      alpha_sum += (rx.products_[i].decay_rate_) / (rx.products_[i].decay_rate_ + simulation::current_alpha);
-    }
-    nu_d *= alpha_sum;
-  }
-    */
-
   double beta = nu_d / nu_t;
 
   if (prn(seed) < beta) {
@@ -1311,8 +1179,6 @@ void sample_secondary_photons(Particle& p, int i_nuclide)
     // calculations", Proc. PHYSOR, Cambridge, UK, Mar 29-Apr 2, 2020.
     double wgt;
     if (settings::run_mode == RunMode::EIGENVALUE && !is_fission(rx->mt_)) {
-      wgt = simulation::keff * p.wgt();
-    } else if (settings::run_mode == RunMode::ALPHA && !is_fission(rx->mt_)) {
       wgt = simulation::keff * p.wgt();
     } else {
       wgt = p.wgt();

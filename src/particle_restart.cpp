@@ -41,9 +41,7 @@ void read_particle_restart(Particle& p, RunMode& previous_run_mode)
     previous_run_mode = RunMode::EIGENVALUE;
   } else if (mode == "fixed source") {
     previous_run_mode = RunMode::FIXED_SOURCE;
-  } else if (mode == "alpha eigenvalue") {
-    previous_run_mode = RunMode::ALPHA;
-  }
+  } 
   read_dataset(file_id, "id", p.id());
   int type;
   read_dataset(file_id, "type", type);
@@ -102,7 +100,6 @@ void run_particle_restart()
   switch (previous_run_mode) {
   case RunMode::EIGENVALUE:
   case RunMode::FIXED_SOURCE:
-  case RunMode::ALPHA:
     particle_seed = (simulation::total_gen + overall_generation() - 1) *
                       settings::n_particles +
                     p.id();

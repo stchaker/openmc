@@ -264,7 +264,7 @@ double get_nuclide_neutron_heating(
   if (kerma == 0.0)
     return 0.0;
 
-  if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+  if (settings::run_mode == RunMode::EIGENVALUE) {
     // Determine kerma for fission as (EFR + EB)*sigma_f
     double kerma_fission =
       nuc.fragments_
@@ -494,7 +494,7 @@ double get_nuclide_xs(const Particle& p, int i_nuclide, int score_bin)
     // Calculate interpolated cross section
     double xs = rx.xs(micro);
 
-    if ((settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) &&
+    if ((settings::run_mode == RunMode::EIGENVALUE) &&
         score_bin == HEATING_LOCAL) {
       // Determine kerma for fission as (EFR + EGP + EGD + EB)*sigma_f
       double kerma_fission =

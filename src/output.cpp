@@ -379,15 +379,10 @@ void print_columns()
   if (settings::entropy_on) {
     fmt::print("  Bat./Gen.      k       Entropy         Average k \n"
                "  =========   ========   ========   ====================\n");
-  } else if (settings::run_mode == RunMode::ALPHA) {
-    fmt::print("  Bat./Gen.      k             Average k           alpha [1/mus]       Average alpha[1/mus] \n"
-               "  =========   ========   =====================    ===============    =========================       \n"); 
   } else {
     fmt::print("  Bat./Gen.      k            Average k\n"
                "  =========   ========   ====================\n");
   }
-
-  
 }
 
 //==============================================================================
@@ -414,18 +409,6 @@ void print_generation()
   if (n > 1) {
     fmt::print("   {:8.5f} +/-{:8.5f}", simulation::keff, simulation::keff_std);
   }
-
-  if(settings::run_mode == RunMode::ALPHA && n <= 1){
-    fmt::print("                              {:8.5f}", simulation::current_alpha/1E6);
-  }
-
-  if (settings::run_mode == RunMode::ALPHA && n > 1){
-    if(simulation::alpha_bank.empty()){
-      fmt::print("       {:8.5f}", simulation::current_alpha/1E6);
-    } else {
-    fmt::print("       {:8.5f}                {:8.5f},", simulation::current_alpha/1E6, average_alpha()/1E6 );
-    }
-  } 
 
   fmt::print("\n");
   std::fflush(stdout);
@@ -468,11 +451,11 @@ void print_runtime()
     show_time("Collisions", time_event_collision.elapsed(), 2);
     show_time("Particle death", time_event_death.elapsed(), 2);
   }
-  if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+  if (settings::run_mode == RunMode::EIGENVALUE) {
     show_time("Time in inactive batches", time_inactive.elapsed(), 1);
   }
   show_time("Time in active batches", time_active.elapsed(), 1);
-  if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+  if (settings::run_mode == RunMode::EIGENVALUE) {
     show_time("Time synchronizing fission bank", time_bank.elapsed(), 1);
     show_time("Sampling source sites", time_bank_sample.elapsed(), 2);
     show_time("SEND/RECV source sites", time_bank_sendrecv.elapsed(), 2);
@@ -559,7 +542,7 @@ void print_results()
   const auto& gt = simulation::global_tallies;
   double mean, stdev;
   if (n > 1) {
-    if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+    if (settings::run_mode == RunMode::EIGENVALUE) {
       std::tie(mean, stdev) = mean_stdev(&gt(GlobalTally::K_COLLISION, 0), n);
       fmt::print(" k-effective (Collision)     = {:.5f} +/- {:.5f}\n", mean,
         t_n1 * stdev);
@@ -576,31 +559,21 @@ void print_results()
           k_combined[0], k_combined[1]);
       }
     }
-    if(settings::run_mode == RunMode::ALPHA){
-      fmt::print(" Average Alpha-eigenvalue    = {:.3f}\n", average_alpha()/1E6);
-    }
     std::tie(mean, stdev) = mean_stdev(&gt(GlobalTally::LEAKAGE, 0), n);
     fmt::print(
       " Leakage Fraction            = {:.5f} +/- {:.5f}\n", mean, t_n1 * stdev);
-      // print effective delayed neutron precursor decay constant
-    if(simulation::lambda_eff_calculated && settings::alpha_ifp){
-      fmt::print(" Effective delayed neutron precursor decay constant = {:.5f} \n", simulation::lambda_eff);
-    }
   } else {
     if (mpi::master)
       warning("Could not compute uncertainties -- only one "
               "active batch simulated!");
 
-    if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+    if (settings::run_mode == RunMode::EIGENVALUE) {
       fmt::print(" k-effective (Collision)    = {:.5f}\n",
         gt(GlobalTally::K_COLLISION, TallyResult::SUM) / n);
       fmt::print(" k-effective (Track-length) = {:.5f}\n",
         gt(GlobalTally::K_TRACKLENGTH, TallyResult::SUM) / n);
       fmt::print(" k-effective (Absorption)   = {:.5f}\n",
         gt(GlobalTally::K_ABSORPTION, TallyResult::SUM) / n);
-    }
-    if(settings::run_mode == RunMode::ALPHA && !simulation::alpha_bank.empty()){
-      fmt::print(" Average Alpha-eigenvalue   = {:.5f}\n", average_alpha());
     }
     fmt::print(" Leakage Fraction           = {:.5f}\n",
       gt(GlobalTally::LEAKAGE, TallyResult::SUM) / n);

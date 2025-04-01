@@ -92,11 +92,6 @@ int openmc_simulation_init()
   // Allocate source, fission and surface source banks.
   allocate_banks();
 
-  // If we are running an alpha-eigenvalue simulation, set the value of the simulation alpha to the initalized value from the user. 
-  if (settings::run_mode == RunMode::ALPHA){
-    simulation::current_alpha = settings::alpha_initalizer;
-  }
-  
 
   // Create track file if needed
   if (!settings::track_identifiers.empty() || settings::write_all_tracks) {
@@ -140,9 +135,7 @@ int openmc_simulation_init()
     if (settings::run_mode == RunMode::EIGENVALUE &&
         settings::solver_type == SolverType::MONTE_CARLO) {
       initialize_source();
-    } else if (settings::run_mode == RunMode::ALPHA && settings::solver_type == SolverType::MONTE_CARLO) {
-      initialize_source(); 
-    }
+    } 
   }
 
   // Display header
@@ -161,15 +154,7 @@ int openmc_simulation_init()
       }
       if (settings::verbosity >= 7)
         print_columns();
-    } else if (settings::run_mode == RunMode::ALPHA){
-      if (settings::solver_type == SolverType::MONTE_CARLO) {
-        header("ALPHA EIGENVALUE SIMULATION", 3);
-      } else if (settings::solver_type == SolverType::RANDOM_RAY){
-        header("ALPHA EIGENVALUE SIMULATION (RANDOM RAY SOLVER)", 3);
-      }
-      if (settings::verbosity >= 7)
-        print_columns();
-    }
+    } 
   }
 
   // load weight windows from file
@@ -319,7 +304,6 @@ namespace openmc {
 namespace simulation {
 
 double alpha_ifp_value = {0.0};
-double current_alpha = 0.0;
 int current_batch;
 int current_gen;
 bool initialized {false};
@@ -343,7 +327,6 @@ const RegularMesh* entropy_mesh {nullptr};
 const RegularMesh* ufs_mesh {nullptr};
 
 vector<double> k_generation;
-vector<double> alpha_bank; 
 vector<int64_t> work_index;
 
 } // namespace simulation
@@ -351,18 +334,6 @@ vector<int64_t> work_index;
 //==============================================================================
 // Non-member functions
 //==============================================================================
-
-// calculate the average of the alpha bank in an alpha-eigenvalue simulation
-double average_alpha(){
-  double sum = 0.0;
-  int counter = 0;
-  for (double val : simulation::alpha_bank){
-    sum += val;
-    counter += 1;
-  }
-  double avg = sum/counter;
-  return avg;
-}
 
 // calculate the alpha eigenvalue from the ifp
 void calculate_alpha_ifp(){
@@ -481,7 +452,7 @@ void calculate_lambda_eff() {
 
 void allocate_banks()
 {
-  if ((settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) &&
+  if ((settings::run_mode == RunMode::EIGENVALUE) &&
       settings::solver_type == SolverType::MONTE_CARLO) {
     // Allocate source bank
     simulation::source_bank.resize(simulation::work_per_rank);
@@ -551,21 +522,6 @@ void finalize_batch()
   accumulate_tallies();
   simulation::time_tallies.stop();
 
-  // perform alpha-k update if needed
-  if (settings::run_mode == RunMode::ALPHA){
-    double alpha_new = 0.0;
-    double alpha_std = 0.0; 
-    int idx = overall_generation() - 2;
-    if(simulation::current_alpha >= 0){
-      //alpha_new  = simulation::current_alpha * simulation::keff;
-      alpha_new = simulation::current_alpha * simulation::k_generation[idx];
-    } else {
-      //alpha_new = simulation::current_alpha / simulation::keff; 
-      alpha_new = simulation::current_alpha / simulation::k_generation[idx]; 
-    }
-    simulation::current_alpha = alpha_new; 
-  }
-
   // update weight windows if needed
   for (const auto& wwg : variance_reduction::weight_windows_generators) {
     wwg->update();
@@ -603,7 +559,7 @@ void finalize_batch()
     }
   }
 
-  if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+  if (settings::run_mode == RunMode::EIGENVALUE) {
     // Write out a separate source point if it's been specified for this batch
     if (contains(settings::sourcepoint_batch, simulation::current_batch) &&
         settings::source_write && settings::source_separate) {
@@ -661,7 +617,7 @@ void finalize_batch()
 
 void initialize_generation()
 {
-  if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+  if (settings::run_mode == RunMode::EIGENVALUE) {
     // Clear out the fission bank
     simulation::fission_bank.resize(0);
 
@@ -679,15 +635,8 @@ void finalize_generation()
 {
   auto& gt = simulation::global_tallies;
 
-  if (settings::run_mode == RunMode::ALPHA) {
-    // only store into alpha bank during active batches to get good statistics on alpha
-    if(simulation::current_batch > settings::n_inactive) {
-      simulation::alpha_bank.emplace_back(simulation::current_alpha);
-    }
-  }
-
   // Update global tallies with the accumulation variables
-  if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+  if (settings::run_mode == RunMode::EIGENVALUE) {
     gt(GlobalTally::K_COLLISION, TallyResult::VALUE) += global_tally_collision;
     gt(GlobalTally::K_ABSORPTION, TallyResult::VALUE) +=
       global_tally_absorption;
@@ -697,14 +646,14 @@ void finalize_generation()
   gt(GlobalTally::LEAKAGE, TallyResult::VALUE) += global_tally_leakage;
 
   // reset tallies
-  if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+  if (settings::run_mode == RunMode::EIGENVALUE) {
     global_tally_collision = 0.0;
     global_tally_absorption = 0.0;
     global_tally_tracklength = 0.0;
   }
   global_tally_leakage = 0.0;
 
-  if ((settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) &&
+  if ((settings::run_mode == RunMode::EIGENVALUE) &&
       settings::solver_type == SolverType::MONTE_CARLO) {
     // If using shared memory, stable sort the fission bank (by parent IDs)
     // so as to allow for reproducibility regardless of which order particles
@@ -715,7 +664,7 @@ void finalize_generation()
     synchronize_bank();
   }
 
-  if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+  if (settings::run_mode == RunMode::EIGENVALUE) {
 
     // Calculate shannon entropy
     if (settings::entropy_on &&
@@ -736,7 +685,7 @@ void finalize_generation()
 void initialize_history(Particle& p, int64_t index_source)
 {
   // set defaults
-  if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+  if (settings::run_mode == RunMode::EIGENVALUE) {
     // set defaults for eigenvalue simulations from primary bank
     p.from_source(&simulation::source_bank[index_source - 1]);
   } else if (settings::run_mode == RunMode::FIXED_SOURCE) {

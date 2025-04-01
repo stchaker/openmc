@@ -98,8 +98,6 @@ extern std::string weight_windows_file;   //!< Location of weight window file to
 // This is required because the c_str() may not be the first thing in
 // std::string. Sometimes it is, but it seems libc++ may not be like that
 // on some computers, like the intel Mac.
-extern "C" double alpha_initalizer; //!< Initial guess of the alpha eigenvalue for alpha eigenvalue runs
-extern "C" double alpha_parameter;  //!< Alpha parameter for modifying alpha interaction sampling
 extern "C" const char* path_statepoint_c; //!< C pointer to statepoint file name
 
 extern "C" int32_t n_inactive;         //!< number of inactive batches

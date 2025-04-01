@@ -23,7 +23,6 @@ constexpr int STATUS_EXIT_ON_TRIGGER {2};
 namespace simulation {
 
 extern "C" double alpha_ifp_value; //!< alpha eigenvalue from IFP-alpha method
-extern "C" double current_alpha; //!< current alpha eigenvalue
 extern "C" int current_batch; //!< current batch
 extern "C" int current_gen;   //!< current fission generation
 extern "C" bool initialized;  //!< has simulation been initialized?
@@ -50,7 +49,6 @@ extern const RegularMesh* entropy_mesh;
 extern const RegularMesh* ufs_mesh;
 
 extern vector<double> k_generation;
-extern vector<double> alpha_bank;
 extern vector<int64_t> work_index;
 
 } // namespace simulation
@@ -61,9 +59,6 @@ extern vector<int64_t> work_index;
 
 //! Allocate space for source and fission banks
 void allocate_banks();
-
-//! Calculate the current average alpha value
-double average_alpha();
 
 //! Calculate the alpha eigenvalue from ifp 
 void calculate_alpha_ifp();

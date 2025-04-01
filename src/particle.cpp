@@ -201,7 +201,6 @@ void Particle::event_calculate_xs()
         // temperature hasn't changed, we don't need to lookup cross
         // sections again.
         model::materials[material()]->calculate_xs(*this);
-        macro_xs().total += settings::alpha_parameter * abs(simulation::current_alpha) / speed(); 
       }
     } else {
       // Get the MG data; unlike the CE case above, we have to re-calculate
@@ -217,10 +216,6 @@ void Particle::event_calculate_xs()
     macro_xs().absorption = 0.0;
     macro_xs().fission = 0.0;
     macro_xs().nu_fission = 0.0;
-
-    if (settings::run_mode == RunMode::ALPHA) {
-      macro_xs().total += settings::alpha_parameter * abs(simulation::current_alpha) / speed(); 
-    }
 
   }
 }
@@ -273,12 +268,6 @@ void Particle::event_advance()
 
   // Score track-length estimate of k-eff
   if (settings::run_mode == RunMode::EIGENVALUE  &&
-      type() == ParticleType::neutron) {
-    keff_tally_tracklength() += wgt() * distance * macro_xs().nu_fission;
-  }
-
-    // Score track-length estimate of k-eff
-  if (settings::run_mode == RunMode::ALPHA  &&
       type() == ParticleType::neutron) {
     keff_tally_tracklength() += wgt() * distance * macro_xs().nu_fission;
   }
@@ -346,11 +335,6 @@ void Particle::event_collide()
     keff_tally_collision() += wgt() * macro_xs().nu_fission / (macro_xs().total);
     
   }
-
-if (settings::run_mode == RunMode::ALPHA &&
-    type() == ParticleType::neutron) {
-  keff_tally_collision() += wgt() * macro_xs().nu_fission / (macro_xs().total);
-}
 
   // Score surface current tallies -- this has to be done before the collision
   // since the direction of the particle will change and we need to use the
@@ -517,7 +501,7 @@ void Particle::event_death()
 
   // Record the number of progeny created by this particle.
   // This data will be used to efficiently sort the fission bank.
-  if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+  if (settings::run_mode == RunMode::EIGENVALUE) {
     int64_t offset = id() - 1 - simulation::work_index[mpi::rank];
     simulation::progeny_per_particle[offset] = n_progeny();
   }
@@ -828,9 +812,6 @@ void Particle::write_restart() const
     case RunMode::EIGENVALUE:
       write_dataset(file_id, "run_mode", "eigenvalue");
       break;
-    case RunMode::ALPHA:
-      write_dataset(file_id, "run_mode", "alpha");
-      break;
     case RunMode::PARTICLE:
       write_dataset(file_id, "run_mode", "particle restart");
       break;
@@ -841,7 +822,7 @@ void Particle::write_restart() const
     write_dataset(file_id, "type", static_cast<int>(type()));
 
     int64_t i = current_work();
-    if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+    if (settings::run_mode == RunMode::EIGENVALUE) {
       // take source data from primary bank for eigenvalue simulation
       write_dataset(file_id, "weight", simulation::source_bank[i - 1].wgt);
       write_dataset(file_id, "energy", simulation::source_bank[i - 1].E);

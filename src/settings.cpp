@@ -92,8 +92,6 @@ std::string path_statepoint;
 const char* path_statepoint_c {path_statepoint.c_str()};
 std::string weight_windows_file;
 
-double alpha_initalizer {0.0};
-double alpha_parameter {1.0};
 int32_t n_inactive {0};
 int32_t max_lost_particles {10};
 double rel_max_lost_particles {1.0e-6};
@@ -201,8 +199,7 @@ void get_run_parameters(pugi::xml_node node_base)
   }
 
   // Get number of inactive batches
-  if (run_mode == RunMode::EIGENVALUE || run_mode == RunMode::ALPHA || 
-      solver_type == SolverType::RANDOM_RAY) {
+  if (run_mode == RunMode::EIGENVALUE || solver_type == SolverType::RANDOM_RAY) {
     if (check_for_node(node_base, "inactive")) {
       n_inactive = std::stoi(get_node_value(node_base, "inactive"));
     }
@@ -439,8 +436,6 @@ void read_settings_xml(pugi::xml_node root)
         run_mode = RunMode::EIGENVALUE;
       } else if (temp_str == "fixed source") {
         run_mode = RunMode::FIXED_SOURCE;
-      } else if (temp_str == "alpha eigenvalue") {
-        run_mode = RunMode::ALPHA;
       } else if (temp_str == "plot") {
         run_mode = RunMode::PLOTTING;
       } else if (temp_str == "particle restart") {
@@ -479,7 +474,7 @@ void read_settings_xml(pugi::xml_node root)
                   "when using the random ray solver.");
   }
 
-  if (run_mode == RunMode::EIGENVALUE || run_mode == RunMode::FIXED_SOURCE || run_mode == RunMode::ALPHA) {
+  if (run_mode == RunMode::EIGENVALUE || run_mode == RunMode::FIXED_SOURCE) {
     // Read run parameters
     get_run_parameters(node_mode);
 
@@ -1094,16 +1089,6 @@ void read_settings_xml(pugi::xml_node root)
   // read weight windows from file
   if (check_for_node(root, "weight_windows_file")) {
     weight_windows_file = get_node_value(root, "weight_windows_file");
-  }
-
-  // read in initial alpha eigenvalue from file
-  if (check_for_node(root, "alpha_initalizer")){
-    alpha_initalizer = std::stod(get_node_value(root, "alpha_initalizer")); 
-  }
-
-  // read in initial alpha parameter from file
-  if (check_for_node(root, "alpha_parameter")){
-    alpha_parameter = std::stod(get_node_value(root, "alpha_parameter")); 
   }
 
   // read settings for weight windows value, this will override
