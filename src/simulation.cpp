@@ -394,12 +394,10 @@ void initialize_batch()
   // this only happens when the simulation keff is sufficiently converged
   // and the batch is not the first batch
   if (settings::run_mode == RunMode::ALPHA && !simulation::alpha_initialized) {
-    if (simulation::current_batch > settings::n_inactive && simulation::keff_std < 0.01) {
         // If we are running an alpha-eigenvalue simulation, set the value of the simulation alpha to the initalized value from the user. 
       simulation::current_alpha = settings::alpha_initalizer;
       simulation::alpha_initialized = true;
     }
-  }
 
   // Determine if this batch is the first inactive or active batch.
   bool first_inactive = false;
@@ -563,8 +561,10 @@ void finalize_generation()
   auto& gt = simulation::global_tallies;
 
   if (settings::run_mode == RunMode::ALPHA && simulation::alpha_initialized) {
-    // only store into alpha bank during sufficiently converged keff-values - assume alpha has been converged after 20 alpha uses
-    if(alpha_bank.size() > 20){ 
+    if (simulation::current_batch > settings::n_inactive) {
+      // Store the current alpha value into the alpha bank
+      // This is done to allow for a more accurate average alpha value
+      // to be calculated at the end of the simulation. 
       simulation::alpha_bank_initialized = true;
       simulation::alpha_bank.emplace_back(simulation::current_alpha);
     }
