@@ -1129,6 +1129,7 @@ void sample_fission_neutron(
   double nu_t = nuc->nu(E_in, Nuclide::EmissionMode::total);
   double nu_d = nuc->nu(E_in, Nuclide::EmissionMode::delayed);
   // update the delayed fission sampling parameter with the alpha delayed contribution if alpha mode is on.
+  /*
   if (settings::run_mode == RunMode::ALPHA){
     double alpha_sum = 0.0;
     for(int i=1; i < nuc->n_precursor_ + 1; ++i){
@@ -1136,6 +1137,7 @@ void sample_fission_neutron(
     }
     nu_d *= alpha_sum;
   }
+    */
 
   double beta = nu_d / nu_t;
 

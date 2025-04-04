@@ -416,20 +416,20 @@ void print_generation()
   }
 
   if(settings::run_mode == RunMode::ALPHA && n <= 1 && simulation::alpha_initialized){
-    fmt::print("                              {:8.5f}", simulation::current_alpha/1E6);
+    fmt::print("                              {:8.9f}", simulation::current_alpha/1E6);
   }
 
   if (settings::run_mode == RunMode::ALPHA && n > 1 &&  simulation::alpha_bank_initialized) {
     if(simulation::alpha_bank.empty()){
-      fmt::print("       {:8.5f}", simulation::current_alpha/1E6);
+      fmt::print("       {:8.9f}", simulation::current_alpha/1E6);
     } else {
-    fmt::print("       {:8.5f}                {:8.5f},", simulation::current_alpha/1E6, average_alpha()/1E6 );
+    fmt::print("       {:8.9f}                {:8.9f},", simulation::current_alpha/1E6, average_alpha()/1E6 );
     }
   } else if (settings::run_mode == RunMode::ALPHA && n > 1 && simulation::alpha_initialized) {
     if(simulation::alpha_bank.empty()){
-      fmt::print("       {:8.5f}", simulation::current_alpha/1E6);
+      fmt::print("       {:8.9f}", simulation::current_alpha/1E6);
     } else {
-    fmt::print("       {:8.5f}                {:8.5f},", simulation::current_alpha/1E6, average_alpha()/1E6 );
+    fmt::print("       {:8.9f}                {:8.9f},", simulation::current_alpha/1E6, average_alpha()/1E6 );
     }
   } 
 
@@ -583,7 +583,7 @@ void print_results()
       }
     }
     if(settings::run_mode == RunMode::ALPHA){
-      fmt::print(" Average Alpha-eigenvalue    = {:.3f}\n", average_alpha()/1E6);
+      fmt::print(" Average Alpha-eigenvalue    = {:.9f}\n", average_alpha()/1E6);
     }
     std::tie(mean, stdev) = mean_stdev(&gt(GlobalTally::LEAKAGE, 0), n);
     fmt::print(
@@ -602,7 +602,7 @@ void print_results()
         gt(GlobalTally::K_ABSORPTION, TallyResult::SUM) / n);
     }
     if(settings::run_mode == RunMode::ALPHA && !simulation::alpha_bank.empty()){
-      fmt::print(" Average Alpha-eigenvalue   = {:.5f}\n", average_alpha());
+      fmt::print(" Average Alpha-eigenvalue   = {:.9f}\n", average_alpha());
     }
     fmt::print(" Leakage Fraction           = {:.5f}\n",
       gt(GlobalTally::LEAKAGE, TallyResult::SUM) / n);
