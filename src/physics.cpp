@@ -125,6 +125,7 @@ void alpha_production(Particle& p){
 
     // Adjust weight of particle by probability of production
     p.wgt() += wgt_created;
+    // p.wgt() *= 2; 
     
   } else {
     double num_created_f = (1 + settings::alpha_parameter) / settings::alpha_parameter;
@@ -173,7 +174,9 @@ void sample_neutron_reaction(Particle& p)
     if (settings::run_mode == RunMode::ALPHA && simulation::current_alpha >= 0 ) {
       alpha_absorption(p, i_nuclide);
     } else if (settings::run_mode == RunMode::ALPHA && simulation::current_alpha < 0) {
-      alpha_production(p);
+      //if (prn(p.current_seed()) * p.macro_xs().total < (settings::alpha_parameter * abs(simulation::current_alpha) / p.speed())) {
+        alpha_production(p);
+      //}
     }
   }
 
@@ -182,11 +185,6 @@ void sample_neutron_reaction(Particle& p)
 
   if(settings::run_mode == RunMode::ALPHA && settings::weight_window_checkpoint_collision){
     apply_weight_windows(p);
-  }
-
-  // If particle was absorbed, return, as it does not need to contribute to other interactions
-  if(!p.alive()){
-    return; 
   }
 
   // Create fission bank sites. Note that while a fission reaction is sampled,
