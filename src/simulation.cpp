@@ -389,7 +389,12 @@ void calculate_alpha_ifp(){
   const double mgt = num_time / denom;
   const double rho = (simulation::keff - 1.0) / simulation::keff;
   calculate_lambda_eff();
-  const double lambda_eff = simulation::lambda_eff;
+  double lambda_eff = simulation::lambda_eff;
+  if (!settings::create_delayed_neutrons){
+    // if we are not using delayed neutrons, set the effective precursor decay constant to 0
+    lambda_eff = 0.0;
+  }
+  
   
   // calculate the simulations static reactivity uncertainty
   double rho_stdv = sqrt(pow((simulation::keff_std/simulation::keff),2) * 2);
@@ -397,6 +402,8 @@ void calculate_alpha_ifp(){
   // calculate the alpha eigenvalue from IFP tallied values
   double alpha_0 = ((((rho - beta_eff) / mgt) - lambda_eff) + sqrt((((rho - beta_eff) / mgt) - lambda_eff) * (((rho - beta_eff) / mgt) - lambda_eff) + 4*lambda_eff*rho/mgt)) / 2;
   double alpha_1 = ((((rho - beta_eff) / mgt) - lambda_eff) - sqrt((((rho - beta_eff) / mgt) - lambda_eff) * (((rho - beta_eff) / mgt) - lambda_eff) + 4*lambda_eff*rho/mgt)) / 2;
+  std::cout << "alpha_0 is: " << alpha_0 << std::endl;
+  std::cout << "alpha_1 is: " << alpha_1 << std::endl;
 
   // determine the fundamental mode of the alpha eigenvalue by searching for the most positive of the two roots 
   if(alpha_0 > alpha_1){
