@@ -413,7 +413,7 @@ void calculate_alpha_ifp(){
   } else {
       fatal_error("Alpha IFP calculation resulted in two equal roots, cannot determine the fundamental mode.");
     }
-  }
+}
 
 void calculate_lambda_eff() {
   #pragma omp master
