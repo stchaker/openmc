@@ -654,6 +654,9 @@ void Particle::cross_vacuum_bc(const Surface& surf)
   // Score to global leakage tally
   keff_tally_leakage() += wgt();
 
+  // Score to neutron removal time
+  simulation::neutron_removal_time += time(); 
+
   // Kill the particle
   wgt() = 0.0;
 

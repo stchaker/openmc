@@ -722,6 +722,9 @@ void absorption(Particle& p, int i_nuclide)
     // Adjust weight of particle by probability of absorption
     p.wgt() -= wgt_absorb;
 
+    // Contribute to neutron removal time with implicit estimator 
+    simulation::neutron_removal_time += p.time() * p.neutron_xs(i_nuclide).absorption / p.neutron_xs(i_nuclide).total;
+
     // Score implicit absorption estimate of keff
     if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
       p.keff_tally_absorption() += wgt_absorb *
@@ -738,7 +741,10 @@ void absorption(Particle& p, int i_nuclide)
                                      p.neutron_xs(i_nuclide).nu_fission /
                                      p.neutron_xs(i_nuclide).absorption;
       }
+      // Score neutron removal time
+      simulation::neutron_removal_time += p.time(); 
 
+      // Kill particle
       p.wgt() = 0.0;
       p.event() = TallyEvent::ABSORB;
       p.event_mt() = N_DISAPPEAR;

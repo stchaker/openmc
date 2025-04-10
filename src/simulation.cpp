@@ -315,6 +315,7 @@ double keff_std;
 double k_col_abs {0.0};
 double k_col_tra {0.0};
 double k_abs_tra {0.0};
+double neutron_removal_time {0.0}; 
 double log_spacing;
 int n_lost_particles {0};
 bool need_depletion_rx {false};
@@ -331,6 +332,7 @@ const RegularMesh* ufs_mesh {nullptr};
 
 vector<double> k_generation;
 vector<double> alpha_bank; 
+vector<double> removal_time_bank; 
 vector<int64_t> work_index;
 
 } // namespace simulation
@@ -423,13 +425,18 @@ void initialize_batch()
 
   // Add user tallies to active tallies list
   setup_active_tallies();
+
+  // Set current batch estimate of neutron removal time to 0
+  simulation::neutron_removal_time = 0.0; 
 }
 
 void finalize_batch()
 {
-  // Reduce tallies onto master process and accumulate
+  // Reduce tallies onto master process and accumulate, include reduction in neutron removal time
   simulation::time_tallies.start();
   accumulate_tallies();
+  simulation::neutron_removal_time = simulation::neutron_removal_time/simulation::total_weight;
+  simulation::removal_time_bank.emplace_back(simulation::neutron_removal_time);
   simulation::time_tallies.stop();
 
   // perform alpha-k update if needed
