@@ -315,7 +315,6 @@ double keff_std;
 double k_col_abs {0.0};
 double k_col_tra {0.0};
 double k_abs_tra {0.0};
-double neutron_removal_time {0.0}; 
 double log_spacing;
 int n_lost_particles {0};
 bool need_depletion_rx {false};
@@ -332,7 +331,6 @@ const RegularMesh* ufs_mesh {nullptr};
 
 vector<double> k_generation;
 vector<double> alpha_bank; 
-vector<double> removal_time_bank; 
 vector<int64_t> work_index;
 
 } // namespace simulation
@@ -425,9 +423,6 @@ void initialize_batch()
 
   // Add user tallies to active tallies list
   setup_active_tallies();
-
-  // Set current batch estimate of neutron removal time to 0
-  simulation::neutron_removal_time = 0.0; 
 }
 
 void finalize_batch()
@@ -435,8 +430,6 @@ void finalize_batch()
   // Reduce tallies onto master process and accumulate, include reduction in neutron removal time
   simulation::time_tallies.start();
   accumulate_tallies();
-  simulation::neutron_removal_time = simulation::neutron_removal_time/simulation::total_weight;
-  simulation::removal_time_bank.emplace_back(simulation::neutron_removal_time);
   simulation::time_tallies.stop();
 
   // perform alpha-k update if needed
@@ -586,6 +579,7 @@ void finalize_generation()
       global_tally_tracklength;
   }
   gt(GlobalTally::LEAKAGE, TallyResult::VALUE) += global_tally_leakage;
+  gt(GlobalTally::TR_COLLISION, TallyResult::VALUE) += global_tally_tr_collision;
 
   // reset tallies
   if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
@@ -594,6 +588,7 @@ void finalize_generation()
     global_tally_tracklength = 0.0;
   }
   global_tally_leakage = 0.0;
+  global_tally_tr_collision = 0.0;
 
   if ((settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) &&
       settings::solver_type == SolverType::MONTE_CARLO) {
@@ -655,7 +650,7 @@ void initialize_history(Particle& p, int64_t index_source)
   p.n_split() = 0;
 
   // Reset weight window ratio
-  p.ww_factor() = 0.0;
+  p.ww_factor() = 0.0; 
 
   // Reset pulse_height_storage
   std::fill(p.pht_storage().begin(), p.pht_storage().end(), 0);

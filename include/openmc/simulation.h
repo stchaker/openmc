@@ -44,7 +44,7 @@ extern int ssw_current_file;       //!< current surface source file
 extern "C" int total_gen;          //!< total number of generations simulated
 extern double total_weight;        //!< Total source weight in a batch
 extern int64_t work_per_rank;      //!< number of particles per MPI rank
-extern double neutron_removal_time; //! neutron removal time in seconds
+
 
 extern const RegularMesh* entropy_mesh;
 extern const RegularMesh* ufs_mesh;
@@ -52,7 +52,6 @@ extern const RegularMesh* ufs_mesh;
 extern vector<double> k_generation;
 extern vector<double> alpha_bank;
 extern vector<int64_t> work_index;
-extern vector<double> removal_time_bank; 
 
 } // namespace simulation
 

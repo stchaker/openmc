@@ -225,6 +225,7 @@ extern double global_tally_absorption;
 extern double global_tally_collision;
 extern double global_tally_tracklength;
 extern double global_tally_leakage;
+extern double global_tally_tr_collision;
 
 //==============================================================================
 // Non-member functions

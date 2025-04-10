@@ -588,8 +588,9 @@ void print_results()
     std::tie(mean, stdev) = mean_stdev(&gt(GlobalTally::LEAKAGE, 0), n);
     fmt::print(
       " Leakage Fraction            = {:.5f} +/- {:.5f}\n", mean, t_n1 * stdev);
-      fmt::print(" Average Neutron Removal Time = {:.5f}\n", std::accumulate(
-        simulation::removal_time_bank.begin(), simulation::removal_time_bank.end(), 0.0) / simulation::removal_time_bank.size());
+    std::tie(mean, stdev) = mean_stdev(&gt(GlobalTally::TR_COLLISION, 0), n);
+    fmt::print(" Removal-Time (Collision) [mus] = {:.5f} +/- {:.5f}\n", 1e6 * mean,
+      1e6 * t_n1 * stdev);
   } else {
     if (mpi::master)
       warning("Could not compute uncertainties -- only one "
@@ -608,8 +609,9 @@ void print_results()
     }
     fmt::print(" Leakage Fraction           = {:.5f}\n",
       gt(GlobalTally::LEAKAGE, TallyResult::SUM) / n);
-    fmt::print(" Average Neutron Removal Time = {:.5f}\n", std::accumulate(
-      simulation::removal_time_bank.begin(), simulation::removal_time_bank.end(), 0.0) / simulation::removal_time_bank.size());
+
+    fmt::print(" Removal-Time (Collision) [mus] = {:.5f}\n",
+      1e6 * gt(GlobalTally::TR_COLLISION, TallyResult::SUM) / n);
   }
   fmt::print("\n");
   std::fflush(stdout);

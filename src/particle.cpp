@@ -340,11 +340,13 @@ void Particle::event_cross_surface()
 
 void Particle::event_collide()
 {
+  // Score collision estimate of removal time. 
+  removal_time_collision() += wgt() * (macro_xs().absorption / macro_xs().total) * lifetime(); 
+
   // Score collision estimate of keff
   if (settings::run_mode == RunMode::EIGENVALUE &&
       type() == ParticleType::neutron) {
     keff_tally_collision() += wgt() * macro_xs().nu_fission / (macro_xs().total);
-    
   }
 
 if (settings::run_mode == RunMode::ALPHA &&
@@ -504,12 +506,15 @@ void Particle::event_death()
   global_tally_tracklength += keff_tally_tracklength();
 #pragma omp atomic
   global_tally_leakage += keff_tally_leakage();
+#pragma omp atomic 
+  global_tally_tr_collision += removal_time_collision();
 
   // Reset particle tallies once accumulated
   keff_tally_absorption() = 0.0;
   keff_tally_collision() = 0.0;
   keff_tally_tracklength() = 0.0;
   keff_tally_leakage() = 0.0;
+  removal_time_collision() = 0.0; 
 
   if (!model::active_pulse_height_tallies.empty()) {
     score_pulse_height_tally(*this, model::active_pulse_height_tallies);
@@ -654,8 +659,8 @@ void Particle::cross_vacuum_bc(const Surface& surf)
   // Score to global leakage tally
   keff_tally_leakage() += wgt();
 
-  // Score to neutron removal time
-  simulation::neutron_removal_time += time(); 
+  // Score to the particle removal time tally
+  removal_time_collision() += wgt() * lifetime();
 
   // Kill the particle
   wgt() = 0.0;
