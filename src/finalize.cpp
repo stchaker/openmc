@@ -155,7 +155,6 @@ int openmc_finalize()
 
   simulation::alpha_bank_initialized = false;
   simulation::alpha_initialized = false;
-  simulation::current_alpha = 0.0;
 
   data::energy_max = {INFTY, INFTY};
   data::energy_min = {0.0, 0.0};

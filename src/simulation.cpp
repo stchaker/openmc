@@ -394,10 +394,10 @@ void initialize_batch()
   // this only happens when the simulation keff is sufficiently converged
   // and the batch is not the first batch
   if (settings::run_mode == RunMode::ALPHA && !simulation::alpha_initialized) {
-        // If we are running an alpha-eigenvalue simulation, set the value of the simulation alpha to the initalized value from the user. 
-      simulation::current_alpha = settings::alpha_initalizer;
-      simulation::alpha_initialized = true;
-    }
+    // If we are running an alpha-eigenvalue simulation, set the value of the simulation alpha to the initalized value from the user. 
+    simulation::current_alpha = settings::alpha_initalizer;
+    simulation::alpha_initialized = true;
+  }
 
   // Determine if this batch is the first inactive or active batch.
   bool first_inactive = false;
@@ -433,6 +433,7 @@ void finalize_batch()
   simulation::time_tallies.stop();
 
   // perform alpha-k update if needed
+  /*
   if (settings::run_mode == RunMode::ALPHA && simulation::alpha_initialized) {
     double alpha_new = 0.0;
     double alpha_std = 0.0; 
@@ -446,6 +447,7 @@ void finalize_batch()
     }
     simulation::current_alpha = alpha_new; 
   }
+*/
 
   // update weight windows if needed
   for (const auto& wwg : variance_reduction::weight_windows_generators) {
@@ -588,7 +590,6 @@ void finalize_generation()
     global_tally_tracklength = 0.0;
   }
   global_tally_leakage = 0.0;
-  global_tally_tr_collision = 0.0;
 
   if ((settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) &&
       settings::solver_type == SolverType::MONTE_CARLO) {
@@ -617,6 +618,15 @@ void finalize_generation()
       print_generation();
     }
   }
+
+    // Update the alpha value if needed
+    if (settings::run_mode == RunMode::ALPHA) {
+      double removal_time_normalized = global_tally_tr_collision/simulation::total_weight; 
+      update_alpha(removal_time_normalized); 
+    }
+
+    // Reset global tally for removal time
+    global_tally_tr_collision = 0.0;
 }
 
 void initialize_history(Particle& p, int64_t index_source)
@@ -911,6 +921,14 @@ void transport_event_based()
     remaining_work -= n_particles;
     source_offset += n_particles;
   }
+}
+
+// Perform update to the current alpha eigenvalue 
+void update_alpha(double removal_time) {
+  int idx = overall_generation() - 1;
+  const double k_target = 1.00000;
+  double next_alpha = simulation::current_alpha + (simulation::k_generation[idx] - k_target) * (simulation::current_alpha + (simulation::k_generation[idx] / removal_time));
+  simulation::current_alpha = next_alpha; 
 }
 
 } // namespace openmc
