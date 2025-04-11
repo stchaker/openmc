@@ -432,23 +432,6 @@ void finalize_batch()
   accumulate_tallies();
   simulation::time_tallies.stop();
 
-  // perform alpha-k update if needed
-  /*
-  if (settings::run_mode == RunMode::ALPHA && simulation::alpha_initialized) {
-    double alpha_new = 0.0;
-    double alpha_std = 0.0; 
-    int idx = overall_generation() - 2;
-    if(simulation::current_alpha >= 0){
-      //alpha_new  = simulation::current_alpha * simulation::keff;
-      alpha_new = simulation::current_alpha * simulation::k_generation[idx];
-    } else {
-      //alpha_new = simulation::current_alpha / simulation::keff; 
-      alpha_new = simulation::current_alpha / simulation::k_generation[idx]; 
-    }
-    simulation::current_alpha = alpha_new; 
-  }
-*/
-
   // update weight windows if needed
   for (const auto& wwg : variance_reduction::weight_windows_generators) {
     wwg->update();
@@ -622,7 +605,8 @@ void finalize_generation()
     // Update the alpha value if needed
     if (settings::run_mode == RunMode::ALPHA) {
       double removal_time_normalized = global_tally_tr_collision/simulation::total_weight; 
-      update_alpha(removal_time_normalized); 
+      // update_alpha(removal_time_normalized); 
+      linear_update_alpha(); 
     }
 
     // Reset global tally for removal time
@@ -929,6 +913,18 @@ void update_alpha(double removal_time) {
   const double k_target = 1.00000;
   double next_alpha = simulation::current_alpha + (simulation::k_generation[idx] - k_target) * (simulation::current_alpha + (simulation::k_generation[idx] / removal_time));
   simulation::current_alpha = next_alpha; 
+}
+
+void linear_update_alpha(){
+  double alpha_new = 0.0;
+  double alpha_std = 0.0; 
+  int idx = overall_generation() - 1;
+  if(simulation::current_alpha >= 0){
+    alpha_new = simulation::current_alpha * simulation::k_generation[idx];
+  } else {
+    alpha_new = simulation::current_alpha / simulation::k_generation[idx]; 
+  }
+  simulation::current_alpha = alpha_new; 
 }
 
 } // namespace openmc

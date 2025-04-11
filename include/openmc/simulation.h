@@ -112,6 +112,9 @@ void transport_event_based();
 //! Update the alpha eigenvalue
 void update_alpha(double removal_time); 
 
+//! Perform the alpha eigenvalue update linearly
+void linear_update_alpha();
+
 } // namespace openmc
 
 #endif // OPENMC_SIMULATION_H
