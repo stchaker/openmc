@@ -386,10 +386,14 @@ void calculate_alpha_ifp(){
 
   // calculate kinetic parameters from tallies and from the simulation keff and lambda_eff
   const double beta_eff = num_beta / denom;
+  std::cout << "beta_eff is: " << beta_eff << std::endl;
   const double mgt = num_time / denom;
+  std::cout << "mgt is: " << mgt << std::endl;
   const double rho = (simulation::keff - 1.0) / simulation::keff;
+  std::cout << "rho is: " << rho << std::endl;
   calculate_lambda_eff();
   double lambda_eff = simulation::lambda_eff;
+  std::cout << "lambda_eff is: " << lambda_eff << std::endl;
   if (!settings::create_delayed_neutrons){
     // if we are not using delayed neutrons, set the effective precursor decay constant to 0
     lambda_eff = 0.0;
@@ -402,8 +406,16 @@ void calculate_alpha_ifp(){
   // calculate the alpha eigenvalue from IFP tallied values
   double alpha_0 = ((((rho - beta_eff) / mgt) - lambda_eff) + sqrt((((rho - beta_eff) / mgt) - lambda_eff) * (((rho - beta_eff) / mgt) - lambda_eff) + 4*lambda_eff*rho/mgt)) / 2;
   double alpha_1 = ((((rho - beta_eff) / mgt) - lambda_eff) - sqrt((((rho - beta_eff) / mgt) - lambda_eff) * (((rho - beta_eff) / mgt) - lambda_eff) + 4*lambda_eff*rho/mgt)) / 2;
+
+  // alternate root formulation from simplification of the above:
+  double s_0 = (lambda_eff * rho) / (beta_eff - rho); 
+  double s_1 = - (beta_eff - rho) / mgt; 
+
   std::cout << "alpha_0 is: " << alpha_0 << std::endl;
   std::cout << "alpha_1 is: " << alpha_1 << std::endl;
+
+  std::cout << "s_0 is: " << s_0 << std::endl;
+  std::cout << "s_1 is: " << s_1 << std::endl;
 
   // determine the fundamental mode of the alpha eigenvalue by searching for the most positive of the two roots 
   if(alpha_0 > alpha_1){

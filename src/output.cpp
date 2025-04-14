@@ -560,7 +560,7 @@ void print_results()
       }
       if (settings::alpha_ifp) {
         fmt::print(" Alpha eigenvalue            = {:.5f}\n",
-          simulation::alpha_ifp_value);
+          simulation::alpha_ifp_value/1E6);
       }
     }
     std::tie(mean, stdev) = mean_stdev(&gt(GlobalTally::LEAKAGE, 0), n);
@@ -580,7 +580,7 @@ void print_results()
         gt(GlobalTally::K_ABSORPTION, TallyResult::SUM) / n);
       if(settings::alpha_ifp) {
         fmt::print(" Alpha eigenvalue           = {:.5f}\n",
-          simulation::alpha_ifp_value);
+          simulation::alpha_ifp_value/1E6);
       }
     }
     fmt::print(" Leakage Fraction           = {:.5f}\n",
