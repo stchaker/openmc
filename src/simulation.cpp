@@ -386,36 +386,36 @@ void calculate_alpha_ifp(){
 
   // calculate kinetic parameters from tallies and from the simulation keff and lambda_eff
   const double beta_eff = num_beta / denom;
-  std::cout << "beta_eff is: " << beta_eff << std::endl;
   const double mgt = num_time / denom;
-  std::cout << "mgt is: " << mgt << std::endl;
   const double rho = (simulation::keff - 1.0) / simulation::keff;
-  std::cout << "rho is: " << rho << std::endl;
   calculate_lambda_eff();
   double lambda_eff = simulation::lambda_eff;
-  std::cout << "lambda_eff is: " << lambda_eff << std::endl;
   if (!settings::create_delayed_neutrons){
     // if we are not using delayed neutrons, set the effective precursor decay constant to 0
     lambda_eff = 0.0;
   }
-  
-  
-  // calculate the simulations static reactivity uncertainty
-  double rho_stdv = sqrt(pow((simulation::keff_std/simulation::keff),2) * 2);
 
+  // calculate the relative uncertainty for all quantities
+  const double rho_stdv_rel = 2 * (simulation::keff_std/simulation::keff);
+  const double mgt_stdv_rel = num_time_stdv / mgt; 
+  double beta_stdv_rel = num_beta_stdv / beta_eff;
+  if(!settings::create_delayed_neutrons){
+    beta_stdv_rel = 0.0; 
+  }
+  const double lambda_stdv_rel = 0.0; 
+  
   // calculate the alpha eigenvalue from IFP tallied values
-  double alpha_0 = ((((rho - beta_eff) / mgt) - lambda_eff) + sqrt((((rho - beta_eff) / mgt) - lambda_eff) * (((rho - beta_eff) / mgt) - lambda_eff) + 4*lambda_eff*rho/mgt)) / 2;
-  double alpha_1 = ((((rho - beta_eff) / mgt) - lambda_eff) - sqrt((((rho - beta_eff) / mgt) - lambda_eff) * (((rho - beta_eff) / mgt) - lambda_eff) + 4*lambda_eff*rho/mgt)) / 2;
+  const double alpha_0 = ((((rho - beta_eff) / mgt) - lambda_eff) + sqrt((((rho - beta_eff) / mgt) - lambda_eff) * (((rho - beta_eff) / mgt) - lambda_eff) + 4*lambda_eff*rho/mgt)) / 2;
+  const double alpha_1 = ((((rho - beta_eff) / mgt) - lambda_eff) - sqrt((((rho - beta_eff) / mgt) - lambda_eff) * (((rho - beta_eff) / mgt) - lambda_eff) + 4*lambda_eff*rho/mgt)) / 2;
 
   // alternate root formulation from simplification of the above:
-  double s_0 = (lambda_eff * rho) / (beta_eff - rho); 
-  double s_1 = - (beta_eff - rho) / mgt; 
+  const double s_0 = (lambda_eff * rho) / (beta_eff - rho); 
+  const double s_1 = - (beta_eff - rho) / mgt; 
+  const double s_0_stdv = s_0 * (rho_stdv_rel + beta_stdv_rel + lambda_stdv_rel);
+  const double s_1_stdv = s_1 * (rho_stdv_rel + beta_stdv_rel + mgt_stdv_rel);
 
-  std::cout << "alpha_0 is: " << alpha_0 << std::endl;
-  std::cout << "alpha_1 is: " << alpha_1 << std::endl;
-
-  std::cout << "s_0 is: " << s_0 << std::endl;
-  std::cout << "s_1 is: " << s_1 << std::endl;
+  fmt::print("Alpha IFP Root 1: {:.5} +/- {:.5}\n", s_0/1e6, s_0_stdv/1e6);
+  fmt::print("Alpha IFP Root 2: {:.5} +/- {:.5}\n", s_1/1e6, s_1_stdv/1e6);
 
   // determine the fundamental mode of the alpha eigenvalue by searching for the most positive of the two roots 
   if(alpha_0 > alpha_1){
