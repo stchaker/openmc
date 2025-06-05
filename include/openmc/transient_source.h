@@ -45,7 +45,9 @@ vector<double> calculate_normalized_precursors(const vector<double>& ratios, con
 
 void write_out_precursors(const vector<double>& precursors); // function to write normalized precursor concentrations to the source file
 
-void write_out_mesh(hid_t statepoint_file); // function to copy over precursor mesh from keff run to transient source file. 
+void write_out_mesh(hid_t statepoint_file); // function to copy over precursor mesh from keff run to transient source file.
+
+void write_out_keff(double keff); // function to write the simulation keff value to the transient source file.
 
 vector<double> read_data(const std::string& sourcefile, const std::string& attr, bool within_mesh);
 

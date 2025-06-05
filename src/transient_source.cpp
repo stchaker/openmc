@@ -1,6 +1,8 @@
 #include "openmc/transient_source.h"
 #include "openmc/hdf5_interface.h"
+#include "openmc/settings.h"
 #include "openmc/source.h"
+#include "openmc/simulation.h"
 
 #include "hdf5.h"
 
@@ -206,6 +208,30 @@ void write_out_mesh(hid_t statepoint_file)
   file_close(source_file);
 }
 
+void write_out_keff(double keff) {
+  // load the source file
+  const std::string sourcefile = "transient_source.h5";
+  hid_t source_file = file_open(sourcefile, 'a', false);
+
+  // Create the dataspace for our keff value
+  constexpr int ndims = 1;
+  const hsize_t dims = {1};
+  hid_t keff_dataspace = H5Screate_simple(ndims, &dims, NULL);
+
+  // Create the dataset
+  hid_t keff_dataset = H5Dcreate(source_file, "/keff", H5T_NATIVE_DOUBLE,
+    keff_dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+  // Write the dataset
+  H5Dwrite(keff_dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+    &keff);
+
+  // Close managed resources
+  H5Sclose(keff_dataspace);
+  H5Dclose(keff_dataset);
+  file_close(source_file);
+}
+
 // utility function to read in vector double values from the source file 
 vector<double> read_data(const std::string& sourcefile, const std::string& attr, bool within_mesh) {
 
@@ -395,6 +421,7 @@ void finalize_transient_source()
   // existing transient_source.h5 file.
   write_out_precursors(finalized_dnps);
   write_out_mesh(file_id);
+  write_out_keff(simulation::keff); 
 
   // manage HDF5 resources
   close_dataset(dnp_dataset);
