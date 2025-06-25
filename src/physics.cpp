@@ -160,8 +160,38 @@ void sample_neutron_reaction(Particle& p)
   // Save which nuclide particle had collision with
   p.event_nuclide() = i_nuclide;
 
+  // Perform alpha absorption if the alpha mode is being used
+
+  if(settings::run_mode == RunMode::ALPHA){
+    // Get the nuclide density of the nuclide that the particle is colliding with
+    const auto& nuc {data::nuclides[i_nuclide]};
+    double nuclide_density = model::materials[p.material()]->atom_density_[nuc->index_];
+
+    // Modify the absorption cross section by the alpha/v term
+    double macro_abs = p.neutron_xs(i_nuclide).absorption * nuclide_density;
+    macro_abs = macro_abs + (settings::alpha_parameter * (simulation::current_alpha) / p.speed()); 
+
+    // Convert back to micro xs and store value for the particle
+    const double new_micro_abs = macro_abs / nuclide_density;
+    const double abs_change = new_micro_abs - p.neutron_xs(i_nuclide).absorption;
+
+    // Reflect this change in the total xs, then abs xs values
+    p.neutron_xs(i_nuclide).total += abs_change;
+    p.neutron_xs(i_nuclide).absorption = new_micro_abs;
+
+    // Lastly, check to make sure the new absorption cross section is still positive, if not, fatal error
+    if (p.neutron_xs(i_nuclide).absorption < 0.0) {
+      fatal_error(fmt::format(
+        "Absorption cross section for nuclide {} in material {} is "
+        "non-positive after applying alpha survival biasing. "
+        "Use alpha_creation option for this system.",
+        nuc->name_, model::materials[p.material()]->name_));
+    }
+
+  }
+
   // Determine if an alpha interaction for this collision event.
-  
+  /*
   if(!settings::survival_biasing){
     if (prn(p.current_seed()) * p.macro_xs().total < (settings::alpha_parameter * abs(simulation::current_alpha) / p.speed())) {
      if (simulation::current_alpha >= 0) {
@@ -186,6 +216,7 @@ void sample_neutron_reaction(Particle& p)
   if(settings::run_mode == RunMode::ALPHA && settings::weight_window_checkpoint_collision){
     apply_weight_windows(p);
   }
+  */
 
   // Create fission bank sites. Note that while a fission reaction is sampled,
   // it never actually "happens", i.e. the weight of the particle does not
@@ -573,7 +604,7 @@ void sample_positron_reaction(Particle& p)
 int sample_nuclide(Particle& p)
 {
   // Sample cumulative distribution function
-  double cutoff = prn(p.current_seed()) * (p.macro_xs().total - (settings::alpha_parameter * abs(simulation::current_alpha)/p.speed()));
+  double cutoff = prn(p.current_seed()) * (p.macro_xs().total - (settings::alpha_parameter * (simulation::current_alpha)/p.speed()));
 
   // Get pointers to nuclide/density arrays
   const auto& mat {model::materials[p.material()]};

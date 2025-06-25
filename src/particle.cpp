@@ -201,7 +201,7 @@ void Particle::event_calculate_xs()
         // temperature hasn't changed, we don't need to lookup cross
         // sections again.
         model::materials[material()]->calculate_xs(*this);
-        macro_xs().total += settings::alpha_parameter * abs(simulation::current_alpha) / speed(); 
+        macro_xs().total += settings::alpha_parameter * simulation::current_alpha / speed(); 
       }
     } else {
       // Get the MG data; unlike the CE case above, we have to re-calculate
@@ -219,7 +219,9 @@ void Particle::event_calculate_xs()
     macro_xs().nu_fission = 0.0;
 
     if (settings::run_mode == RunMode::ALPHA) {
-      macro_xs().total += settings::alpha_parameter * abs(simulation::current_alpha) / speed(); 
+      if(simulation::current_alpha >= 0.0){
+        macro_xs().total += settings::alpha_parameter * abs(simulation::current_alpha) / speed(); 
+      }
     }
 
   }
