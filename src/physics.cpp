@@ -128,12 +128,16 @@ void alpha_production(Particle& p){
     // p.wgt() *= 2; 
     
   } else {
-    double num_created_f = (1 + settings::alpha_parameter) / settings::alpha_parameter;
+    //double num_created_f = (1 + settings::alpha_parameter) / settings::alpha_parameter;
     // particle has a number of particles created and then stored into the
     // secondary bank
 
-    int num_created = static_cast<int>(num_created_f + prn(p.current_seed()));
+    //int num_created = static_cast<int>(num_created_f + prn(p.current_seed()));
+    
+    // Particle always creates a single secondary particle copy and continues on 
 
+    int num_created = 1;
+    
     for (int i = 0; i < num_created - 1; ++i) {
       SourceSite site;
       site.r = p.r();
@@ -147,7 +151,6 @@ void alpha_production(Particle& p){
 
       p.secondary_bank().push_back(site);
 
-      // p.event_mt() = N_2N;
     }
   }
 }
