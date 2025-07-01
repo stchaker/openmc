@@ -75,6 +75,7 @@ int openmc_finalize()
 
   // Reset global variables
   settings::assume_separate = false;
+  settings::alpha_initial = 0.0;
   settings::check_overlaps = false;
   settings::confidence_intervals = false;
   settings::create_fission_neutrons = true;
@@ -146,6 +147,9 @@ int openmc_finalize()
   settings::write_all_tracks = false;
   settings::write_initial_source = false;
 
+  simulation::alpha_eigenvalue = 0.0;
+  simulation::alpha_eigenvalue_tally.clear();
+  simulation::alpha_eigenvalue_average = 0.0;
   simulation::keff = 1.0;
   simulation::need_depletion_rx = false;
   simulation::ssw_current_file = 1;

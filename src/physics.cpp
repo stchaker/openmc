@@ -521,7 +521,12 @@ void sample_positron_reaction(Particle& p)
 int sample_nuclide(Particle& p)
 {
   // Sample cumulative distribution function
-  double cutoff = prn(p.current_seed()) * p.macro_xs().total;
+  double cutoff = 0.0;
+  if(settings::run_mode == RunMode::ALPHA) {
+    cutoff = prn(p.current_seed()) * (p.macro_xs().total - abs(simulation::alpha_eigenvalue) / p.speed());
+  } else {
+    cutoff = prn(p.current_seed()) * p.macro_xs().total;
+  }
 
   // Get pointers to nuclide/density arrays
   const auto& mat {model::materials[p.material()]};
@@ -547,7 +552,13 @@ int sample_nuclide(Particle& p)
 int sample_element(Particle& p)
 {
   // Sample cumulative distribution function
-  double cutoff = prn(p.current_seed()) * p.macro_xs().total;
+  double cutoff = 0.0;
+  if (settings::run_mode == RunMode::ALPHA) {
+    cutoff = prn(p.current_seed()) * (p.macro_xs().total - abs(simulation::alpha_eigenvalue) / p.speed()); 
+  } else {
+    cutoff = prn(p.current_seed()) * p.macro_xs().total;
+  }
+  
 
   // Get pointers to elements, densities
   const auto& mat {model::materials[p.material()]};
