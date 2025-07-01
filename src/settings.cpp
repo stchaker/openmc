@@ -140,6 +140,7 @@ int64_t trace_particle;
 vector<array<int, 3>> track_identifiers;
 int trigger_batch_interval {1};
 int verbosity {7};
+double initial_alpha {0.0}; 
 double weight_cutoff {0.25};
 double weight_survive {1.0};
 

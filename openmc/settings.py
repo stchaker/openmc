@@ -21,6 +21,7 @@ from .weight_windows import WeightWindows, WeightWindowGenerator, WeightWindowsL
 
 class RunMode(Enum):
     EIGENVALUE = 'eigenvalue'
+    ALPHA = 'alpha'
     FIXED_SOURCE = 'fixed source'
     PLOT = 'plot'
     VOLUME = 'volume'
@@ -433,6 +434,8 @@ class Settings:
         self._max_tracks = None
         self._use_decay_photons = None
 
+        self._alpha_initial = None
+
         self._random_ray = {}
 
         for key, value in kwargs.items():
@@ -448,6 +451,17 @@ class Settings:
         for mode in RunMode:
             if mode.value == run_mode:
                 self._run_mode = mode
+    
+    @property
+    def alpha_initial(self) -> float | None:
+        return self._alpha_initial
+
+    @alpha_initial.setter
+    def alpha_initial(self, alpha_initial: float | None):
+        cv.check_type('alpha_initial', alpha_initial, Real, allow_none=True)
+        if alpha_initial is 0.0:
+            raise ValueError("alpha_initial cannot be set to 0.0")
+        self._alpha_initial = alpha_initial
 
     @property
     def batches(self) -> int:
@@ -1244,6 +1258,11 @@ class Settings:
         elem = ET.SubElement(root, "run_mode")
         elem.text = self._run_mode.value
 
+    def _create_alpha_initial_subelement(self, root):
+        if self._alpha_initial is not None:
+            element = ET.SubElement(root, "alpha_initial")
+            element.text = str(self._alpha_initial)
+
     def _create_batches_subelement(self, root):
         if self._batches is not None:
             element = ET.SubElement(root, "batches")
@@ -1723,6 +1742,11 @@ class Settings:
         if text is not None:
             self.run_mode = text
 
+    def _alpha_initial_from_xml_element(self, root):
+        text = get_text(root, 'alpha_initial')
+        if text is not None:
+            self.alpha_initial = float(text)
+
     def _particles_from_xml_element(self, root):
         text = get_text(root, 'particles')
         if text is not None:
@@ -2142,6 +2166,7 @@ class Settings:
         element = ET.Element("settings")
 
         self._create_run_mode_subelement(element)
+        self._create_alpha_initial_subelement(element)
         self._create_particles_subelement(element)
         self._create_batches_subelement(element)
         self._create_inactive_subelement(element)
@@ -2252,6 +2277,7 @@ class Settings:
         settings = cls()
         settings._eigenvalue_from_xml_element(elem)
         settings._run_mode_from_xml_element(elem)
+        settings._alpha_initial_from_xml_element(elem)
         settings._particles_from_xml_element(elem)
         settings._batches_from_xml_element(elem)
         settings._inactive_from_xml_element(elem)

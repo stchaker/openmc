@@ -348,6 +348,7 @@ enum class Interpolation {
 
 enum class RunMode {
   UNSET, // default value, OpenMC throws error if left to this
+  ALPHA,
   FIXED_SOURCE,
   EIGENVALUE,
   PLOTTING,
