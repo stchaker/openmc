@@ -247,7 +247,13 @@ void Particle::event_advance()
   }
 
   // Select smaller of the two distances
-  double distance = std::min(boundary().distance, collision_distance());
+  double distance = 0.0;
+  if (settings::run_mode == RunMode::ALPHA) {
+    distance = std::min(boundary().distance, collision_distance());
+    distance = std::min(alpha_event_distance(), distance);
+  } else {  
+    distance = std::min(boundary().distance, collision_distance());
+  }
 
   // Advance particle in space and time
   // Short-term solution until the surface source is revised and we can use
