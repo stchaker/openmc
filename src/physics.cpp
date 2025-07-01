@@ -137,8 +137,8 @@ void alpha_production(Particle& p){
     // Particle always creates a single secondary particle copy and continues on 
 
     int num_created = 1;
-    
-    for (int i = 0; i < num_created - 1; ++i) {
+
+    for (int i = 0; i < num_created; ++i) {
       SourceSite site;
       site.r = p.r();
       site.u = p.u();
