@@ -672,7 +672,8 @@ void RandomRaySimulation::print_results_random_ray(
     show_time("Tally conversion only", time_tallies.elapsed(), 1);
     show_time("MPI source reductions only", time_bank_sendrecv.elapsed(), 1);
     show_time("Other iteration routines", misc_time, 1);
-    if (settings::run_mode == RunMode::EIGENVALUE) {
+    if (settings::run_mode == RunMode::EIGENVALUE ||
+        settings::run_mode == RunMode::ALPHA) {
       show_time("Time in inactive batches", time_inactive.elapsed());
     }
     show_time("Time in active batches", time_active.elapsed());

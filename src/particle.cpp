@@ -342,7 +342,8 @@ void Particle::event_cross_surface()
 void Particle::event_collide()
 {
   // Score collision estimate of keff
-  if (settings::run_mode == RunMode::EIGENVALUE &&
+  if ((settings::run_mode == RunMode::EIGENVALUE ||
+       settings::run_mode == RunMode::ALPHA) &&
       type() == ParticleType::neutron) {
     keff_tally_collision() += wgt() * macro_xs().nu_fission / macro_xs().total;
   }
@@ -511,7 +512,7 @@ void Particle::event_death()
 
   // Record the number of progeny created by this particle.
   // This data will be used to efficiently sort the fission bank.
-  if (settings::run_mode == RunMode::EIGENVALUE) {
+  if ((settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA)) {
     int64_t offset = id() - 1 - simulation::work_index[mpi::rank];
     simulation::progeny_per_particle[offset] = n_progeny();
   }
@@ -822,6 +823,9 @@ void Particle::write_restart() const
     case RunMode::EIGENVALUE:
       write_dataset(file_id, "run_mode", "eigenvalue");
       break;
+    case RunMode::ALPHA:
+      write_dataset(file_id, "run_mode", "alpha eigenvalue");
+      break;
     case RunMode::PARTICLE:
       write_dataset(file_id, "run_mode", "particle restart");
       break;
@@ -832,7 +836,7 @@ void Particle::write_restart() const
     write_dataset(file_id, "type", static_cast<int>(type()));
 
     int64_t i = current_work();
-    if (settings::run_mode == RunMode::EIGENVALUE) {
+    if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
       // take source data from primary bank for eigenvalue simulation
       write_dataset(file_id, "weight", simulation::source_bank[i - 1].wgt);
       write_dataset(file_id, "energy", simulation::source_bank[i - 1].E);
