@@ -458,10 +458,11 @@ class Settings:
 
     @alpha_initial.setter
     def alpha_initial(self, alpha_initial: float | None):
-        cv.check_type('alpha_initial', alpha_initial, Real, allow_none=True)
-        if alpha_initial is 0.0:
-            raise ValueError("alpha_initial cannot be set to 0.0")
-        self._alpha_initial = alpha_initial
+        if alpha_initial is not None:
+            cv.check_type('alpha_initial', alpha_initial, Real)
+            if alpha_initial is 0.0:
+                raise ValueError("alpha_initial cannot be set to 0.0")
+            self._alpha_initial = alpha_initial
 
     @property
     def batches(self) -> int:
