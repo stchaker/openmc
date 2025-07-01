@@ -1038,7 +1038,7 @@ void accumulate_tallies()
     auto& gt = simulation::global_tallies;
 
     if (settings::run_mode == RunMode::EIGENVALUE ||
-        settings::run_mode == RunMode::KCODE) {
+        settings::run_mode == RunMode::ALPHA) {
       if (simulation::current_batch > settings::n_inactive) {
         // Accumulate products of different estimators of k
         double k_col = gt(GlobalTally::K_COLLISION, TallyResult::VALUE) /

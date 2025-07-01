@@ -497,6 +497,8 @@ void read_settings_xml(pugi::xml_node root)
       } else {
         fatal_error("Unrecognized run mode: " + temp_str);
       }
+    }
+  
 
       // Assume XML specifies <particles>, <batches>, etc. directly
       node_mode = root;
