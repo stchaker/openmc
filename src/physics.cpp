@@ -105,18 +105,6 @@ void sample_neutron_reaction(Particle& p)
 
   const auto& nuc {data::nuclides[i_nuclide]};
 
-  // If we are running an alpha problem, based on the sign of the alpha eigenvalue, perform either 
-  // time absorption or production
-  if (settings::run_mode == RunMode::ALPHA) {
-    if (simulation::alpha_eigenvalue < 0.0) {
-      // Sample alpha production
-      sample_alpha_production(p, i_nuclide);
-    } else {
-      // Sample alpha absorption
-      sample_alpha_absorption(p, i_nuclide);
-    }
-  }
-
   if (nuc->fissionable_ && p.neutron_xs(i_nuclide).fission > 0.0) {
     auto& rx = sample_fission(i_nuclide, p);
     if (settings::run_mode == RunMode::EIGENVALUE || 
@@ -179,22 +167,22 @@ void sample_neutron_reaction(Particle& p)
   }
 }
 
-void sample_alpha_absorption(Particle& p, int i_nuclide){
+void sample_alpha_absorption(Particle& p){
   // Check if survival biasing is turned on
   if(!settings::survival_biasing){
-    bool sample = prn(p.current_seed()) * p.macro_xs().total < (abs(simulation::alpha_eigenvalue) / p.speed());
+    bool sample = prn(p.current_seed()) * (p.macro_xs().total + abs(simulation::alpha_eigenvalue)/p.speed()) < (abs(simulation::alpha_eigenvalue) / p.speed());
     if(sample){
       p.wgt() = 0.0;
       p.event() = TallyEvent::ABSORB;
       p.event_mt() = N_DISAPPEAR; 
     }
   } else {
-    double wgt_abs = p.wgt() * (abs(simulation::alpha_eigenvalue) / p.speed()) / p.macro_xs().total; 
+    double wgt_abs = p.wgt() * (abs(simulation::alpha_eigenvalue) / p.speed()) / (p.macro_xs().total + abs(simulation::alpha_eigenvalue) / p.speed());
     p.wgt() -= wgt_abs;
   }
 }
 
-void sample_alpha_production(Particle& p, int i_nuclide){
+void sample_alpha_production(Particle& p){
   // PLACE PRODUCTION ROUTINE HERE
 }
 
@@ -523,7 +511,7 @@ int sample_nuclide(Particle& p)
   // Sample cumulative distribution function
   double cutoff = 0.0;
   if(settings::run_mode == RunMode::ALPHA) {
-    cutoff = prn(p.current_seed()) * (p.macro_xs().total - abs(simulation::alpha_eigenvalue) / p.speed());
+    cutoff = prn(p.current_seed()) * (p.macro_xs().total);
   } else {
     cutoff = prn(p.current_seed()) * p.macro_xs().total;
   }
@@ -554,7 +542,7 @@ int sample_element(Particle& p)
   // Sample cumulative distribution function
   double cutoff = 0.0;
   if (settings::run_mode == RunMode::ALPHA) {
-    cutoff = prn(p.current_seed()) * (p.macro_xs().total - abs(simulation::alpha_eigenvalue) / p.speed()); 
+    cutoff = prn(p.current_seed()) * (p.macro_xs().total);
   } else {
     cutoff = prn(p.current_seed()) * p.macro_xs().total;
   }

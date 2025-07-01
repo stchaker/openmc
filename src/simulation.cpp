@@ -845,21 +845,43 @@ void free_memory_simulation()
 
 void transport_history_based_single_particle(Particle& p)
 {
-  while (p.alive()) {
-    p.event_calculate_xs();
-    if (p.alive()) {
-      p.event_advance();
-    }
-    if (p.alive()) {
-      if (p.collision_distance() > p.boundary().distance) {
-        p.event_cross_surface();
-      } else if (p.alive()) {
-        p.event_collide();
+  if(settings::run_mode == RunMode::ALPHA){
+    while (p.alive()) {
+      p.event_calculate_xs();
+      if (p.alive()) {
+        p.event_advance();
       }
+      if (p.alive()) {
+        if (p.collision_distance() > p.boundary().distance && p.alpha_event_distance() > p.boundary().distance) {
+          p.event_cross_surface();
+        } else if (p.alive()) {
+          if (p.collision_distance() > p.alpha_event_distance()) {
+            p.event_alpha(); 
+          } else {
+            p.event_collide();
+          }
+        }
+      }
+      p.event_revive_from_secondary();
     }
-    p.event_revive_from_secondary();
+    p.event_death();
+  } else {
+    while (p.alive()) {
+      p.event_calculate_xs();
+      if (p.alive()) {
+        p.event_advance();
+      }
+      if (p.alive()) {
+        if (p.collision_distance() > p.boundary().distance) {
+          p.event_cross_surface();
+        } else if (p.alive()) {
+          p.event_collide();
+        }
+      }
+      p.event_revive_from_secondary();
+    }
+    p.event_death();
   }
-  p.event_death();
 }
 
 void transport_history_based()

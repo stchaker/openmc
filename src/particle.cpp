@@ -209,9 +209,6 @@ void Particle::event_calculate_xs()
         // temperature hasn't changed, we don't need to lookup cross
         // sections again.
         model::materials[material()]->calculate_xs(*this);
-        if(settings::run_mode == RunMode::ALPHA) {
-          macro_xs().total += abs(simulation::alpha_eigenvalue) / speed(); 
-        }
       }
     } else {
       // Get the MG data; unlike the CE case above, we have to re-calculate
@@ -227,10 +224,6 @@ void Particle::event_calculate_xs()
     macro_xs().absorption = 0.0;
     macro_xs().fission = 0.0;
     macro_xs().nu_fission = 0.0;
-
-    if(settings::run_mode == RunMode::ALPHA) {
-      macro_xs().total += abs(simulation::alpha_eigenvalue) / speed();
-    }
   }
 }
 
@@ -246,6 +239,11 @@ void Particle::event_advance()
     collision_distance() = INFINITY;
   } else {
     collision_distance() = -std::log(prn(current_seed())) / macro_xs().total;
+  }
+
+  // Sample a distance to alpha event
+  if (type() == ParticleType::neutron && settings::run_mode == RunMode::ALPHA) {
+    alpha_event_distance() = -std::log(prn(current_seed())) / (abs(simulation::alpha_eigenvalue) / speed());
   }
 
   // Select smaller of the two distances
@@ -336,6 +334,15 @@ void Particle::event_cross_surface()
   // Score cell to cell partial currents
   if (!model::active_surface_tallies.empty()) {
     score_surface_tally(*this, model::active_surface_tallies);
+  }
+}
+
+void Particle::event_alpha() {
+  // Handle alpha eigenvalue events in this kernel
+  if (simulation::alpha_eigenvalue < 0) {
+    sample_alpha_production(*this); 
+  } else {
+    sample_alpha_absorption(*this);
   }
 }
 

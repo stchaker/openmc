@@ -487,6 +487,7 @@ private:
   bool trace_ {false};
 
   double collision_distance_;
+  double alpha_event_distance_; 
 
   int n_event_ {0};
 
@@ -655,6 +656,8 @@ public:
 
   // Distance to the next collision
   double& collision_distance() { return collision_distance_; }
+
+  double& alpha_event_distance() {return alpha_event_distance_; }
 
   // Number of events particle has undergone
   int& n_event() { return n_event_; }
