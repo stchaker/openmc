@@ -37,7 +37,7 @@ SourceRegionHandle::SourceRegionHandle(SourceRegion& sr)
 //==============================================================================
 SourceRegion::SourceRegion(int negroups, bool is_linear)
 {
-  if (settings::run_mode == RunMode::EIGENVALUE) {
+  if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
     // If in eigenvalue mode, set starting flux to guess of 1
     scalar_flux_old_.assign(negroups, 1.0);
   } else {

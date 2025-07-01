@@ -906,7 +906,7 @@ void FlatSourceDomain::output_to_vtk() const
     }
 
     // Plot fission source
-    if (settings::run_mode == RunMode::EIGENVALUE) {
+    if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
       std::fprintf(plot, "SCALARS total_fission_source float\n");
       std::fprintf(plot, "LOOKUP_TABLE default\n");
       for (int i = 0; i < Nx * Ny * Nz; i++) {

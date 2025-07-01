@@ -209,6 +209,9 @@ void Particle::event_calculate_xs()
         // temperature hasn't changed, we don't need to lookup cross
         // sections again.
         model::materials[material()]->calculate_xs(*this);
+        if(settings::run_mode == RunMode::ALPHA) {
+          macro_xs().total += abs(simulation::alpha_eigenvalue) / speed(); 
+        }
       }
     } else {
       // Get the MG data; unlike the CE case above, we have to re-calculate
@@ -224,6 +227,10 @@ void Particle::event_calculate_xs()
     macro_xs().absorption = 0.0;
     macro_xs().fission = 0.0;
     macro_xs().nu_fission = 0.0;
+
+    if(settings::run_mode == RunMode::ALPHA) {
+      macro_xs().total += abs(simulation::alpha_eigenvalue) / speed();
+    }
   }
 }
 
@@ -273,7 +280,7 @@ void Particle::event_advance()
   }
 
   // Score track-length estimate of k-eff
-  if (settings::run_mode == RunMode::EIGENVALUE &&
+  if ((settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) &&
       type() == ParticleType::neutron) {
     keff_tally_tracklength() += wgt() * distance * macro_xs().nu_fission;
   }

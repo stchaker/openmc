@@ -105,9 +105,22 @@ void sample_neutron_reaction(Particle& p)
 
   const auto& nuc {data::nuclides[i_nuclide]};
 
+  // If we are running an alpha problem, based on the sign of the alpha eigenvalue, perform either 
+  // time absorption or production
+  if (settings::run_mode == RunMode::ALPHA) {
+    if (simulation::alpha_eigenvalue < 0.0) {
+      // Sample alpha production
+      sample_alpha_production(p, i_nuclide);
+    } else {
+      // Sample alpha absorption
+      sample_alpha_absorption(p, i_nuclide);
+    }
+  }
+
   if (nuc->fissionable_ && p.neutron_xs(i_nuclide).fission > 0.0) {
     auto& rx = sample_fission(i_nuclide, p);
-    if (settings::run_mode == RunMode::EIGENVALUE) {
+    if (settings::run_mode == RunMode::EIGENVALUE || 
+        settings::run_mode == RunMode::ALPHA) {
       create_fission_sites(p, i_nuclide, rx);
     } else if (settings::run_mode == RunMode::FIXED_SOURCE &&
                settings::create_fission_neutrons) {
@@ -166,6 +179,25 @@ void sample_neutron_reaction(Particle& p)
   }
 }
 
+void sample_alpha_absorption(Particle& p, int i_nuclide){
+  // Check if survival biasing is turned on
+  if(!settings::survival_biasing){
+    bool sample = prn(p.current_seed()) * p.macro_xs().total < (abs(simulation::alpha_eigenvalue) / p.speed());
+    if(sample){
+      p.wgt() = 0.0;
+      p.event() = TallyEvent::ABSORB;
+      p.event_mt() = N_DISAPPEAR; 
+    }
+  } else {
+    double wgt_abs = p.wgt() * (abs(simulation::alpha_eigenvalue) / p.speed()) / p.macro_xs().total; 
+    p.wgt() -= wgt_abs;
+  }
+}
+
+void sample_alpha_production(Particle& p, int i_nuclide){
+  // PLACE PRODUCTION ROUTINE HERE
+}
+
 void create_fission_sites(Particle& p, int i_nuclide, const Reaction& rx)
 {
   // If uniform fission source weighting is turned on, we increase or decrease
@@ -197,7 +229,10 @@ void create_fission_sites(Particle& p, int i_nuclide, const Reaction& rx)
 
   // Determine whether to place fission sites into the shared fission bank
   // or the secondary particle bank.
-  bool use_fission_bank = (settings::run_mode == RunMode::EIGENVALUE);
+  bool use_fission_bank = false;
+  if(settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+    use_fission_bank = true;
+  }
 
   // Counter for the number of fission sites successfully stored to the shared
   // fission bank or the secondary particle bank
@@ -638,7 +673,8 @@ void absorption(Particle& p, int i_nuclide)
     p.wgt() -= wgt_absorb;
 
     // Score implicit absorption estimate of keff
-    if (settings::run_mode == RunMode::EIGENVALUE) {
+    if (settings::run_mode == RunMode::EIGENVALUE || 
+        settings::run_mode == RunMode::ALPHA) {
       p.keff_tally_absorption() += wgt_absorb *
                                    p.neutron_xs(i_nuclide).nu_fission /
                                    p.neutron_xs(i_nuclide).absorption;
@@ -648,7 +684,8 @@ void absorption(Particle& p, int i_nuclide)
     if (p.neutron_xs(i_nuclide).absorption >
         prn(p.current_seed()) * p.neutron_xs(i_nuclide).total) {
       // Score absorption estimate of keff
-      if (settings::run_mode == RunMode::EIGENVALUE) {
+      if (settings::run_mode == RunMode::EIGENVALUE || 
+          settings::run_mode == RunMode::ALPHA) {
         p.keff_tally_absorption() += p.wgt() *
                                      p.neutron_xs(i_nuclide).nu_fission /
                                      p.neutron_xs(i_nuclide).absorption;
@@ -1195,7 +1232,7 @@ void sample_secondary_photons(Particle& p, int i_nuclide)
     // Stedry, "Self-consistent energy normalization for quasistatic reactor
     // calculations", Proc. PHYSOR, Cambridge, UK, Mar 29-Apr 2, 2020.
     double wgt = photon_wgt;
-    if (settings::run_mode == RunMode::EIGENVALUE && !is_fission(rx->mt_)) {
+    if ((settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) && !is_fission(rx->mt_)) {
       wgt *= simulation::keff;
     }
 

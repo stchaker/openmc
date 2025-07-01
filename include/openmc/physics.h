@@ -64,6 +64,12 @@ Reaction& sample_fission(int i_nuclide, Particle& p);
 void sample_photon_product(
   int i_nuclide, Particle& p, int* i_rx, int* i_product);
 
+//! Samples alpha absorption reactions for a particle.
+void sample_alpha_absorption(Particle& p, int i_nuclide);
+
+//! Samples alpha production reactions for a particle.
+void sample_alpha_production(Particle& p, int i_nuclide);
+
 void absorption(Particle& p, int i_nuclide);
 
 void scatter(Particle& p, int i_nuclide);
