@@ -85,6 +85,11 @@ int openmc_simulation_init()
     initialize_data();
   }
 
+  // If running an alpha problem, read the initial alpha eigenvalue
+  if (settings::run_mode == RunMode::ALPHA) {
+    read_alpha_initial();
+  }
+
   // Determine how much work each process should do
   calculate_work();
 
@@ -149,6 +154,14 @@ int openmc_simulation_init()
         header("K EIGENVALUE SIMULATION", 3);
       } else if (settings::solver_type == SolverType::RANDOM_RAY) {
         header("K EIGENVALUE SIMULATION (RANDOM RAY SOLVER)", 3);
+      }
+      if (settings::verbosity >= 7)
+        print_columns();
+    } else if (settings::run_mode == RunMode::ALPHA) {
+      if (settings::solver_type == SolverType::MONTE_CARLO) {
+        header("ALPHA EIGENVALUE SIMULATION", 3);
+      } else if (settings::solver_type == SolverType::RANDOM_RAY) {
+        header("ALPHA EIGENVALUE SIMULATION (RANDOM RAY SOLVER)", 3);
       }
       if (settings::verbosity >= 7)
         print_columns();
@@ -314,12 +327,15 @@ int ssw_current_file;
 int total_gen {0};
 double total_weight;
 int64_t work_per_rank;
+double alpha_eigenvalue {0.0};
+double alpha_eigenvalue_average {0.0};
 
 const RegularMesh* entropy_mesh {nullptr};
 const RegularMesh* ufs_mesh {nullptr};
 
 vector<double> k_generation;
 vector<int64_t> work_index;
+vector<double> alpha_eigenvalue_tally;
 
 } // namespace simulation
 
@@ -346,6 +362,41 @@ void allocate_banks()
   if (settings::surf_source_write) {
     // Allocate surface source bank
     simulation::surf_source_bank.reserve(settings::ssw_max_particles);
+  }
+}
+
+void read_alpha_initial()
+{
+  // Read initial alpha eigenvalue from settings
+  simulation::alpha_eigenvalue = settings::alpha_initial;
+}
+
+void append_alpha_eigenvalue(double& alpha)
+{
+  simulation::alpha_eigenvalue_tally.push_back(alpha);
+}
+
+void update_alpha_eigenvalue()
+{
+  const int idx = overall_generation() - 1; 
+  append_alpha_eigenvalue(simulation::alpha_eigenvalue);
+  average_alpha(); 
+  if(simulation::alpha_eigenvalue >= 0) {
+    simulation::alpha_eigenvalue = simulation::alpha_eigenvalue * simulation::k_generation[idx]; 
+  } else {
+    simulation::alpha_eigenvalue = simulation::alpha_eigenvalue / simulation::k_generation[idx];
+  }
+}
+
+void average_alpha()
+{
+  // Calculate the average alpha eigenvalue from the tally vector
+  if (simulation::alpha_eigenvalue_tally.empty()) {
+    simulation::alpha_eigenvalue = settings::alpha_initial;
+  } else {
+    double sum = std::accumulate(simulation::alpha_eigenvalue_tally.begin(),
+      simulation::alpha_eigenvalue_tally.end(), 0.0);
+    simulation::alpha_eigenvalue_average = sum / simulation::alpha_eigenvalue_tally.size();
   }
 }
 

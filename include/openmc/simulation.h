@@ -41,12 +41,15 @@ extern int ssw_current_file;       //!< current surface source file
 extern "C" int total_gen;          //!< total number of generations simulated
 extern double total_weight;        //!< Total source weight in a batch
 extern int64_t work_per_rank;      //!< number of particles per MPI rank
+extern "C" double alpha_eigenvalue; //!< current simulation alpha eigenvalue
+extern "C" double alpha_eigenvalue_average; //!< average alpha eigenvalue
 
 extern const RegularMesh* entropy_mesh;
 extern const RegularMesh* ufs_mesh;
 
 extern vector<double> k_generation;
 extern vector<int64_t> work_index;
+extern vector<double> alpha_eigenvalue_tally; //!< tally of alpha eigenvalues
 
 } // namespace simulation
 
@@ -56,6 +59,18 @@ extern vector<int64_t> work_index;
 
 //! Allocate space for source and fission banks
 void allocate_banks();
+
+//! Read in initial alpha eigenvalue from settings
+void read_alpha_initial(); 
+
+//! Append alpha eigenvalues to the tally vector
+void append_alpha_eigenvalue(double& alpha);
+
+//! Update the alpha eigenvalue 
+void update_alpha_eigenvalue(); 
+
+//! Get the average alpha eigenvalue from the tally vector
+void average_alpha();
 
 //! Determine number of particles to transport per process
 void calculate_work();
