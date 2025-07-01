@@ -1115,6 +1115,10 @@ void read_settings_xml(pugi::xml_node root)
       get_node_value_bool(root, "create_delayed_neutrons");
   }
 
+  if (check_for_node(root, "alpha_initial")) {
+    settings::alpha_initial = std::stod(get_node_value(root, "alpha_initial"));
+  }
+
   // Check whether create fission sites
   if (run_mode == RunMode::FIXED_SOURCE) {
     if (check_for_node(root, "create_fission_neutrons")) {
