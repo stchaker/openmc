@@ -122,6 +122,7 @@ extern "C" int openmc_statepoint_write(const char* filename, bool* write_source)
     if (settings::run_mode == RunMode::EIGENVALUE ||
         settings::run_mode == RunMode::ALPHA) {
       write_eigenvalue_hdf5(file_id);
+    }
 
     hid_t tallies_group = create_group(file_id, "tallies");
 
