@@ -352,7 +352,10 @@ void allocate_banks()
     simulation::source_bank.resize(simulation::work_per_rank);
 
     // Allocate fission bank
-    init_fission_bank(3 * simulation::work_per_rank);
+    init_fission_bank(6 * simulation::work_per_rank);
+
+    // Allocate the alpha bank
+    init_alpha_bank(3 * simulation::work_per_rank);
 
     // Allocate IFP bank
     if (settings::ifp_on) {
@@ -552,6 +555,9 @@ void initialize_generation()
   if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
     // Clear out the fission bank
     simulation::fission_bank.resize(0);
+
+    // Clear out the alpha bank
+    simulation::alpha_bank.resize(0);
 
     // Count source sites if using uniform fission source weighting
     if (settings::ufs_on)

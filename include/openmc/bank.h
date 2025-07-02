@@ -22,6 +22,8 @@ extern SharedArray<SourceSite> surf_source_bank;
 
 extern SharedArray<SourceSite> fission_bank;
 
+extern SharedArray<SourceSite> alpha_bank;
+
 extern vector<vector<int>> ifp_source_delayed_group_bank;
 
 extern vector<vector<double>> ifp_source_lifetime_bank;
@@ -43,6 +45,8 @@ void sort_fission_bank();
 void free_memory_bank();
 
 void init_fission_bank(int64_t max);
+
+void init_alpha_bank(int64_t max);
 
 } // namespace openmc
 
