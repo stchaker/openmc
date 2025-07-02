@@ -253,15 +253,8 @@ void sample_alpha_production(Particle& p) {
     if(!settings::survival_biasing) {
 
       // Create a secondary neutron particle and store it in the secondary bank the original particle continues normally 
-      
-      const double num_created_f = 1.0;
 
-      int num_created = static_cast<int>(num_created_f + prn(p.current_seed()));
-
-      double nu_d[MAX_DELAYED_GROUPS] = {0.};
-
-      p.nu_bank().clear();
-      p.fission() = true;
+      const int num_created = 1;
 
       for (int i=0; i < num_created; i++){
         SourceSite site;
@@ -272,27 +265,11 @@ void sample_alpha_production(Particle& p) {
         site.wgt = p.wgt();
         site.particle = ParticleType::neutron;
         site.parent_id = p.id();
-        site.progeny_id = p.n_progeny()++;
         site.surf_id = 0; 
         site.delayed_group = p.delayed_group(); 
 
         p.secondary_bank().push_back(site);
 
-        if(p.delayed_group() > 0) {
-          nu_d[p.delayed_group() - 1]++;
-        }
-
-        NuBank& nu_bank_entry = p.nu_bank().emplace_back();
-        nu_bank_entry.wgt = site.wgt;
-        nu_bank_entry.E = site.E;
-        nu_bank_entry.delayed_group = site.delayed_group;
-      }
-
-      p.n_bank() = num_created;
-      p.wgt_bank() = num_created / p.wgt(); 
-
-      for(size_t d = 0; d < MAX_DELAYED_GROUPS; d++) {
-        p.n_delayed_bank(d) = nu_d[d];
       }
 
   } else {

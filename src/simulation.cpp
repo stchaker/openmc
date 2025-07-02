@@ -352,7 +352,7 @@ void allocate_banks()
     simulation::source_bank.resize(simulation::work_per_rank);
 
     // Allocate fission bank
-    init_fission_bank(6 * simulation::work_per_rank);
+    init_fission_bank(simulation::work_per_rank * simulation::work_per_rank);
 
     // Allocate IFP bank
     if (settings::ifp_on) {
