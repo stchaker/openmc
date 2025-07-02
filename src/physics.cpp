@@ -185,48 +185,52 @@ void sample_alpha_absorption(Particle& p){
 void sample_alpha_production(Particle& p){
   if(!settings::survival_biasing) {
     // Create a secondary neutron particle and store it in the fission bank the original particle continues normally 
+    
+    const double num_created_f = 1.0;
 
-    const int num_created = 1;
+    int num_created = static_cast<int>(num_created_f + prn(p.current_seed()));
 
     double nu_d[MAX_DELAYED_GROUPS] = {0.};
 
     p.nu_bank().clear();
     p.fission() = true;
 
-    SourceSite site;
-    site.r = p.r();
-    site.u = p.u();
-    site.E = p.E();
-    site.time = p.time();
-    site.wgt = p.wgt();
-    site.particle = ParticleType::neutron;
-    site.parent_id = p.id();
-    site.progeny_id = p.n_progeny()++;
-    site.surf_id = 0; 
-    site.delayed_group = p.delayed_group(); 
+    for (int i=0; i < num_created; i++){
+      SourceSite site;
+      site.r = p.r();
+      site.u = p.u();
+      site.E = p.E();
+      site.time = p.time();
+      site.wgt = p.wgt();
+      site.particle = ParticleType::neutron;
+      site.parent_id = p.id();
+      site.progeny_id = p.n_progeny()++;
+      site.surf_id = 0; 
+      site.delayed_group = p.delayed_group(); 
 
-    // Place the fission site into the shared fission bank
-    int64_t idx = simulation::fission_bank.thread_safe_append(site);
+      // Place the fission site into the shared fission bank
+      int64_t idx = simulation::fission_bank.thread_safe_append(site);
 
-    if (idx == -1) {
-      warning(
-        "The shared fission bank is full. Additional fission sites created "
-        "in this generation will not be banked. Results may be "
-        "non-deterministic.");
-      // Decrement number of particle progeny as storage was unsuccessful.
-      // This step is needed so that the sum of all progeny is equal to the
-      // size of the shared fission bank.
-      p.n_progeny()--;
+      if (idx == -1) {
+        warning(
+          "The shared fission bank is full. Additional fission sites created "
+          "in this generation will not be banked. Results may be "
+          "non-deterministic.");
+        // Decrement number of particle progeny as storage was unsuccessful.
+        // This step is needed so that the sum of all progeny is equal to the
+        // size of the shared fission bank.
+        p.n_progeny()--;
+      }
+
+      if(p.delayed_group() > 0) {
+        nu_d[p.delayed_group() - 1]++;
+      }
+
+      NuBank& nu_bank_entry = p.nu_bank().emplace_back();
+      nu_bank_entry.wgt = site.wgt;
+      nu_bank_entry.E = site.E;
+      nu_bank_entry.delayed_group = site.delayed_group;
     }
-
-    if(p.delayed_group() > 0) {
-      nu_d[p.delayed_group() - 1]++;
-    }
-
-    NuBank& nu_bank_entry = p.nu_bank().emplace_back();
-    nu_bank_entry.wgt = site.wgt;
-    nu_bank_entry.E = site.E;
-    nu_bank_entry.delayed_group = site.delayed_group;
 
     p.n_bank() = num_created;
     p.wgt_bank() = num_created / p.wgt(); 

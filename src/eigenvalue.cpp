@@ -155,7 +155,7 @@ void synchronize_bank()
   // sites were created, so overallocate by a factor of 3
   int64_t index_temp = 0;
 
-  vector<SourceSite> temp_sites(3 * simulation::work_per_rank);
+  vector<SourceSite> temp_sites(6 * simulation::work_per_rank);
 
   // Temporary banks for IFP
   vector<vector<int>> temp_delayed_groups;
