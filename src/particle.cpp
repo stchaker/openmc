@@ -350,6 +350,37 @@ void Particle::event_alpha() {
   } else {
     sample_alpha_absorption(*this);
   }
+
+  // Reset banked weight during collision
+  n_bank() = 0;
+  bank_second_E() = 0.0;
+  wgt_bank() = 0.0;
+  zero_delayed_bank();
+
+  // Reset fission logical
+  fission() = false;
+
+  // Save coordinates for tallying purposes
+  r_last_current() = r();
+
+  // Set last material to none since cross sections will need to be
+  // re-evaluated
+  material_last() = C_NONE;
+
+  // Set all directions to base level -- right now, after a collision, only
+  // the base level directions are changed
+  for (int j = 0; j < n_coord() - 1; ++j) {
+    if (coord(j + 1).rotated) {
+      // If next level is rotated, apply rotation matrix
+      const auto& m {model::cells[coord(j).cell]->rotation_};
+      const auto& u {coord(j).u};
+      coord(j + 1).u = u.rotate(m);
+    } else {
+      // Otherwise, copy this level's direction
+      coord(j + 1).u = coord(j).u;
+    }
+  }
+
 }
 
 void Particle::event_collide()

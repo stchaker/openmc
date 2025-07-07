@@ -657,6 +657,7 @@ public:
   // Distance to the next collision
   double& collision_distance() { return collision_distance_; }
 
+  // Distance to the next alpha event
   double& alpha_event_distance() {return alpha_event_distance_; }
 
   // Number of events particle has undergone
