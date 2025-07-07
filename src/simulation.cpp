@@ -382,8 +382,6 @@ void append_alpha_eigenvalue(double& alpha)
 void update_alpha_eigenvalue()
 {
   const int idx = overall_generation() - 1; 
-  append_alpha_eigenvalue(simulation::alpha_eigenvalue);
-  average_alpha(); 
   if(simulation::alpha_eigenvalue >= 0) {
     simulation::alpha_eigenvalue = simulation::alpha_eigenvalue * simulation::k_generation[idx]; 
   } else {
@@ -395,7 +393,7 @@ void average_alpha()
 {
   // Calculate the average alpha eigenvalue from the tally vector
   if (simulation::alpha_eigenvalue_tally.empty()) {
-    simulation::alpha_eigenvalue = settings::alpha_initial;
+    simulation::alpha_eigenvalue_average = simulation::alpha_eigenvalue; 
   } else {
     double sum = std::accumulate(simulation::alpha_eigenvalue_tally.begin(),
       simulation::alpha_eigenvalue_tally.end(), 0.0);
@@ -612,16 +610,21 @@ void finalize_generation()
     // Collect results and statistics
     calculate_generation_keff();
     calculate_average_keff();
-
-    // Update the alpha eigenvalue if running an alpha problem
-    if (settings::run_mode == RunMode::ALPHA) {
-      update_alpha_eigenvalue();
+    if(settings::run_mode == RunMode::ALPHA){
+      append_alpha_eigenvalue(simulation::alpha_eigenvalue);
+      average_alpha();
     }
 
     // Write generation output
     if (mpi::master && settings::verbosity >= 7) {
       print_generation();
     }
+
+    // Update the alpha eigenvalue if running an alpha problem
+    if (settings::run_mode == RunMode::ALPHA) {
+      update_alpha_eigenvalue();
+    }
+
   }
 }
 
