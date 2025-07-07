@@ -374,7 +374,9 @@ void read_alpha_initial()
 
 void append_alpha_eigenvalue(double& alpha)
 {
-  simulation::alpha_eigenvalue_tally.push_back(alpha);
+  if(simulation::current_batch > settings::n_inactive){
+    simulation::alpha_eigenvalue_tally.push_back(alpha);
+  }
 }
 
 void update_alpha_eigenvalue()
@@ -852,7 +854,7 @@ void transport_history_based_single_particle(Particle& p)
         p.event_advance();
       }
       if (p.alive()) {
-        if (p.collision_distance() > p.boundary().distance && p.alpha_event_distance() > p.boundary().distance) {
+        if ((p.collision_distance() > p.boundary().distance) && (p.alpha_event_distance() > p.boundary().distance)) {
           p.event_cross_surface();
         } else if (p.alive()) {
           if (p.collision_distance() > p.alpha_event_distance()) {

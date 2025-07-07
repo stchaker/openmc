@@ -148,7 +148,6 @@ int openmc_finalize()
   settings::write_initial_source = false;
 
   simulation::alpha_eigenvalue = 0.0;
-  simulation::alpha_eigenvalue_tally.clear();
   simulation::alpha_eigenvalue_average = 0.0;
   simulation::keff = 1.0;
   simulation::need_depletion_rx = false;

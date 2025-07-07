@@ -1134,6 +1134,10 @@ void free_memory_tally()
   model::active_pulse_height_tallies.clear();
 
   model::tally_map.clear();
+
+  if (settings::run_mode == RunMode::ALPHA){
+    simulation::alpha_eigenvalue_tally.clear();  
+  }
 }
 
 //==============================================================================

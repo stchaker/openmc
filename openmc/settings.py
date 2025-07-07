@@ -20,8 +20,8 @@ from .weight_windows import WeightWindows, WeightWindowGenerator, WeightWindowsL
 
 
 class RunMode(Enum):
-    EIGENVALUE = 'eigenvalue'
     ALPHA = 'alpha'
+    EIGENVALUE = 'eigenvalue'
     FIXED_SOURCE = 'fixed source'
     PLOT = 'plot'
     VOLUME = 'volume'
