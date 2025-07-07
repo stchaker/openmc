@@ -90,6 +90,15 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 #===============================================================================
+# If the build type is set to debug, then turn on address sanitizers 
+#===============================================================================
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  message(STATUS "CMAKE_BUILD_TYPE is set to Debug, enabling address sanitizers")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
+endif()
+
+#===============================================================================
 # OpenMP for shared-memory parallelism (and GPU support some day!)
 #===============================================================================
 
