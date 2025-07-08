@@ -75,7 +75,7 @@ double Particle::speed() const
   }
 }
 
-bool Particle::p.create_secondary(p.wgt(), p.u(), p.E(), ParticleType::neutron);(
+bool Particle::create_secondary(
   double wgt, Direction u, double E, ParticleType type)
 {
   // If energy is below cutoff for this particle, don't create secondary
