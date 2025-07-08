@@ -253,7 +253,7 @@ void sample_alpha_production(Particle& p) {
     if(!settings::survival_biasing) {
 
       // Create a secondary neutron particle and store it in the secondary bank the original particle continues normally 
-
+      /*
       const int num_created = 1;
 
       for (int i=0; i < num_created; i++){
@@ -269,14 +269,16 @@ void sample_alpha_production(Particle& p) {
         site.delayed_group = p.delayed_group(); 
 
         p.secondary_bank().push_back(site);
-
       }
+      */
+
+      p.create_secondary(p.wgt(), p.u(), p.E(), ParticleType::neutron);
 
   } else {
-    // Error if survival biasing is turned on
-    fatal_error(
-      "Alpha eigenvalue production is not supported with survival biasing "
-      "turned on. Please turn off survival biasing in the settings file.");
+    p.wgt() *= 2.0;
+    if(settings::weight_window_checkpoint_collision){
+      apply_weight_windows(p);  
+    }
   }
 }
 
