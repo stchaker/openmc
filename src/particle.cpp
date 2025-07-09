@@ -600,7 +600,7 @@ void Particle::pht_secondary_particles()
 void Particle::sanity_check(){
   const double godiva_rad = 8.7407;
   const double epsilon = 0.0000001; 
-  const int max_num_events = 50; 
+  const int max_num_events = 100; 
   if(r().norm() > (godiva_rad + epsilon) && (material() != MATERIAL_VOID)){
     std::cout << "Particle position norm is: " << r().norm() << " Which is outside of: " << godiva_rad << '\n';
     std::cout << "Particle material is: " << material() << " Which is not: " << MATERIAL_VOID << '\n';
