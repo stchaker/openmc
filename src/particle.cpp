@@ -534,6 +534,12 @@ void Particle::event_death()
     finalize_particle_track(*this);
   }
 
+// Contribute to particle counters for fission and alpha events
+if(settings::run_mode == RunMode::ALPHA){
+  simulation::fission_counter_tally.push_back(fission_counter()); 
+  simulation::alpha_counter_tally.push_back(alpha_counter());
+}
+
 // Contribute tally reduction variables to global accumulator
 #pragma omp atomic
   global_tally_absorption += keff_tally_absorption();
