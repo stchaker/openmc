@@ -862,8 +862,10 @@ void transport_history_based_single_particle(Particle& p)
           p.event_cross_surface();
         } else if (p.alive()) {
           if (p.collision_distance() > p.alpha_event_distance()) {
+            p.sanity_check();
             p.event_alpha(); 
           } else {
+            p.sanity_check(); 
             p.event_collide();
           }
         }

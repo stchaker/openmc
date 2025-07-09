@@ -605,6 +605,12 @@ void Particle::sanity_check(){
     std::cout << "Particle material is: " << material() << " Which is not: " << MATERIAL_VOID << '\n';
     fatal_error("Particle has traveled outside the radius of the problem and is still being simulated!");
   }
+  if(fission_counter() > 10){
+    fmt::print("Particle: {} has undergone {} fissions - may be an error", id(), fission_counter());
+  }
+  if(alpha_counter() > 10){
+    fmt::print("Particle: {} has undergone {} alpha events - may be an error", id(), alpha_counter());
+  }
 }
 
 void Particle::cross_surface(const Surface& surf)
