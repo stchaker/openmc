@@ -337,6 +337,8 @@ const RegularMesh* ufs_mesh {nullptr};
 vector<double> k_generation;
 vector<int64_t> work_index;
 vector<double> alpha_eigenvalue_tally;
+vector<int> fission_counter_tally; 
+vector<int> alpha_counter_tally;
 
 } // namespace simulation
 
@@ -871,6 +873,8 @@ void transport_history_based_single_particle(Particle& p)
       }
       p.event_revive_from_secondary();
     }
+    simulation::fission_counter_tally.emplace_back(p.fission_counter());
+    simulation::alpha_counter_tally.emplace_back(p.alpha_counter());
     p.event_death();
   } else {
     while (p.alive()) {

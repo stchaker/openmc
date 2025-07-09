@@ -273,6 +273,7 @@ void sample_alpha_production(Particle& p) {
       */
       #pragma omp critical
       p.create_secondary(p.wgt(), p.u(), p.E(), ParticleType::neutron);
+      p.alpha_counter_update(); 
 
   } else {
     p.wgt() *= 2.0;
@@ -335,6 +336,9 @@ void create_fission_sites(Particle& p, int i_nuclide, const Reaction& rx)
 
     // Sample delayed group and angle/energy for fission reaction
     sample_fission_neutron(i_nuclide, rx, &site, p);
+
+    // Add to this particle's fission counter
+    p.fission_counter_update(); 
 
     // Store fission site in bank
     if (use_fission_bank) {
