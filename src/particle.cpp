@@ -599,7 +599,7 @@ void Particle::pht_secondary_particles()
 
 void Particle::sanity_check(){
   const double godiva_rad = 8.7407;
-  const double epsilon = 0.0000001; 
+  const double epsilon = 0.00000001; 
   const int max_num_events = 100; 
   if(r().norm() > (godiva_rad + epsilon) && (material() != MATERIAL_VOID)){
     std::cout << "Particle position norm is: " << r().norm() << " Which is outside of: " << godiva_rad << '\n';
@@ -611,6 +611,8 @@ void Particle::sanity_check(){
   }
   if(alpha_counter() > max_num_events){
     fmt::print("Particle: {} has undergone {} alpha events - may be an error\n", id(), alpha_counter());
+    fmt::print("The current alpha/v cross section is: {}\n", (simulation::alpha_eigenvalue / speed()));
+    fmt::print("The current total cross section is: {}\n", macro_xs().total); 
   }
 }
 
