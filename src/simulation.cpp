@@ -659,6 +659,12 @@ void initialize_history(Particle& p, int64_t index_source)
   // Reset split counter
   p.n_split() = 0;
 
+  // Reset particle fission counter
+  p.fission_counter() = 0; 
+
+  // Reset particle alpha counter
+  p.alpha_counter() = 0; 
+
   // Reset weight window ratio
   p.ww_factor() = 0.0;
 
