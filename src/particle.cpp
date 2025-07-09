@@ -600,16 +600,17 @@ void Particle::pht_secondary_particles()
 void Particle::sanity_check(){
   const double godiva_rad = 8.7407;
   const double epsilon = 0.0000001; 
+  const int max_num_events = 50; 
   if(r().norm() > (godiva_rad + epsilon) && (material() != MATERIAL_VOID)){
     std::cout << "Particle position norm is: " << r().norm() << " Which is outside of: " << godiva_rad << '\n';
     std::cout << "Particle material is: " << material() << " Which is not: " << MATERIAL_VOID << '\n';
     fatal_error("Particle has traveled outside the radius of the problem and is still being simulated!");
   }
-  if(fission_counter() > 10){
-    fmt::print("Particle: {} has undergone {} fissions - may be an error", id(), fission_counter());
+  if(fission_counter() > max_num_events){
+    fmt::print("Particle: {} has undergone {} fissions - may be an error\n", id(), fission_counter());
   }
-  if(alpha_counter() > 10){
-    fmt::print("Particle: {} has undergone {} alpha events - may be an error", id(), alpha_counter());
+  if(alpha_counter() > max_num_events){
+    fmt::print("Particle: {} has undergone {} alpha events - may be an error\n", id(), alpha_counter());
   }
 }
 
