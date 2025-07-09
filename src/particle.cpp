@@ -612,7 +612,7 @@ void Particle::sanity_check(){
   if(alpha_counter() > max_num_events){
     fmt::print("Particle: {} has undergone {} alpha events - may be an error\n", id(), alpha_counter());
     fmt::print("The current alpha/v cross section is: {}\n", (simulation::alpha_eigenvalue / speed()));
-    fmt::print("The current total cross section is: {}\n", macro_xs().total); 
+    fmt::print("The current total cross section is: {}\n\n", macro_xs().total); 
   }
 }
 
