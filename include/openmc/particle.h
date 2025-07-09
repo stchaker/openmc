@@ -77,6 +77,9 @@ public:
   void pht_collision_energy();
   void pht_secondary_particles();
 
+  //! Function to perform sanity checks
+  void sanity_check(); 
+
   //! Cross a surface and handle boundary conditions
   void cross_surface(const Surface& surf);
 

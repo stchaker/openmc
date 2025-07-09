@@ -265,6 +265,9 @@ void Particle::event_advance()
   this->time() += dt;
   this->lifetime() += dt;
 
+  // Perform the sanity check here at event advance to determine if we have a serious issue.
+  this->sanity_check(); 
+
   // Kill particle if its time exceeds the cutoff
   bool hit_time_boundary = false;
   double time_cutoff = settings::time_cutoff[static_cast<int>(type())];
@@ -594,6 +597,16 @@ void Particle::pht_secondary_particles()
   if (it != model::pulse_height_cells.end()) {
     int index = std::distance(model::pulse_height_cells.begin(), it);
     pht_storage()[index] -= E();
+  }
+}
+
+void Particle::sanity_check(){
+  const double godiva_rad = 8.7407;
+  if(r().norm() > godiva_rad && (material() != MATERIAL_VOID)){
+    fatal_error("Particle has traveled outside the radius of the problem and is still being simulated!");
+  }
+  if(r().norm() < godiva_rad && (material() == MATERIAL_VOID)){
+    fatal_error("Particle is within GODIVA but is being treated as a void!");
   }
 }
 
