@@ -173,6 +173,7 @@ void sample_alpha_absorption(Particle& p){
       p.wgt() = 0.0;
       p.event() = TallyEvent::ABSORB;
       p.event_mt() = N_DISAPPEAR; 
+      p.alpha_counter_update(); 
     } else {
       fatal_error(
         "Alpha eigenvalue absorption is not supported with survival biasing "
