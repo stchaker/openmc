@@ -590,12 +590,6 @@ void print_results()
     }
     fmt::print(" Leakage Fraction           = {:.5f}\n",
       gt(GlobalTally::LEAKAGE, TallyResult::SUM) / n);
-    if(settings::run_mode == RunMode::ALPHA){
-      double avg_fission_counter = std::accumulate(simulation::fission_counter_tally.begin(), simulation::fission_counter_tally.end(), 0) / simulation::fission_counter_tally.size(); 
-      double avg_alpha_counter = std::accumulate(simulation::alpha_counter_tally.begin(), simulation::alpha_counter_tally.end(), 0) / simulation::alpha_counter_tally.size(); 
-      fmt::print(" Average # Fissions per Particle     = {:.5f}\n", avg_fission_counter);
-      fmt::print(" Average # Alpha Events per Particle  = {:.5f}\n", avg_alpha_counter); 
-    }
   }
   fmt::print("\n");
   std::fflush(stdout);
