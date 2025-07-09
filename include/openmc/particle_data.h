@@ -270,20 +270,6 @@ public:
   int& cell_instance() { return cell_instance_; }
   const int& cell_instance() const { return cell_instance_; }
 
-  // Fission Counter 
-  int& fission_counter() { return fission_counter_; }
-  const int& fission_counter() const { return fission_counter_; }
-
-  // Alpha Counter
-  int& alpha_counter() { return alpha_counter_; }
-  const int& alpha_counter() const { return alpha_counter_; }
-
-  // Fission Counter update
-  void fission_counter_update() { fission_counter_++; }
-
-  // Alpha Counter update
-  void alpha_counter_update() { alpha_counter_++; }
-
   // Coordinates for all nesting levels
   LocalCoord& coord(int i) { return coord_[i]; }
   const LocalCoord& coord(int i) const { return coord_[i]; }
@@ -363,10 +349,6 @@ public:
 
 private:
   int64_t id_ {-1}; //!< Unique ID
-
-  int fission_counter_ {0}; //!< Counter for fission events instantiated by a particle
-
-  int alpha_counter_ {0}; //!< Counter for alpha events instantiated by a particle
 
   int n_coord_ {1};          //!< number of current coordinate levels
   int cell_instance_;        //!< offset for distributed properties
@@ -512,6 +494,9 @@ private:
   int n_split_ {0};
   double ww_factor_ {0.0};
 
+  int fission_counter_ {0}; //!< Counter for fission events instantiated by a particle
+  int alpha_counter_ {0}; //!< Counter for alpha events instantiated by a particle
+
   int64_t n_progeny_ {0};
 
 public:
@@ -543,6 +528,22 @@ public:
   // Particle type (n, p, e, gamma, etc)
   ParticleType& type() { return type_; }
   const ParticleType& type() const { return type_; }
+
+    // Alpha Counter
+  int& alpha_counter() { return alpha_counter_; }
+  const int& alpha_counter() const { return alpha_counter_; }
+
+  // Fission Counter 
+  int& fission_counter() { return fission_counter_; }
+  const int& fission_counter() const { return fission_counter_; }
+
+
+    // Fission Counter update
+  void fission_counter_update() { fission_counter_++; }
+  
+  // Alpha Counter update
+  void alpha_counter_update() { alpha_counter_++; }
+
 
   // Current particle energy, energy before collision,
   // and corresponding multigroup group indices. Energy
