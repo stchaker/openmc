@@ -271,7 +271,7 @@ void sample_alpha_production(Particle& p) {
         p.secondary_bank().push_back(site);
       }
       */
-
+      #pragma omp critical
       p.create_secondary(p.wgt(), p.u(), p.E(), ParticleType::neutron);
 
   } else {
