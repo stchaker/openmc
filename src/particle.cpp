@@ -265,9 +265,6 @@ void Particle::event_advance()
   this->time() += dt;
   this->lifetime() += dt;
 
-  // Perform the sanity check here at event advance to determine if we have a serious issue.
-  this->sanity_check(); 
-
   // Kill particle if its time exceeds the cutoff
   bool hit_time_boundary = false;
   double time_cutoff = settings::time_cutoff[static_cast<int>(type())];
