@@ -157,9 +157,6 @@ int openmc_finalize()
   simulation::entropy_mesh = nullptr;
   simulation::ufs_mesh = nullptr;
 
-  simulation::fission_counter_tally.clear();
-  simulation::alpha_counter_tally.clear(); 
-
   data::energy_max = {INFTY, INFTY};
   data::energy_min = {0.0, 0.0};
   data::temperature_min = 0.0;
