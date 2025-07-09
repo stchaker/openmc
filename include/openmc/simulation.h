@@ -50,8 +50,6 @@ extern const RegularMesh* ufs_mesh;
 extern vector<double> k_generation;
 extern vector<int64_t> work_index;
 extern vector<double> alpha_eigenvalue_tally; //!< tally of alpha eigenvalues
-extern vector<int> fission_counter_tally; //!< tally of fission count
-extern vector<int> alpha_counter_tally; //!< tally of alpha event count
 
 } // namespace simulation
 

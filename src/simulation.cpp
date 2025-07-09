@@ -337,8 +337,7 @@ const RegularMesh* ufs_mesh {nullptr};
 vector<double> k_generation;
 vector<int64_t> work_index;
 vector<double> alpha_eigenvalue_tally;
-vector<int> fission_counter_tally; 
-vector<int> alpha_counter_tally;
+
 
 } // namespace simulation
 
@@ -863,10 +862,8 @@ void transport_history_based_single_particle(Particle& p)
           p.event_cross_surface();
         } else if (p.alive()) {
           if (p.collision_distance() > p.alpha_event_distance()) {
-            p.sanity_check();
             p.event_alpha(); 
           } else {
-            p.sanity_check(); 
             p.event_collide();
           }
         }
