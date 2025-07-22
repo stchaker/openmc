@@ -82,7 +82,7 @@ struct formatter<std::array<T, 2>> {
   auto format(const std::array<T, 2>& arr, FormatContext& ctx)
   {
 #endif
-    return format_to(ctx.out(), "({}, {})", arr[0], arr[1]);
+    return fmt::format_to(ctx.out(), "({}, {})", arr[0], arr[1]);
 }
 }; // namespace fmt
 
