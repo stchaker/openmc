@@ -601,14 +601,14 @@ void Particle::sanity_check(){
   const double godiva_rad = 8.7407;
   const double epsilon = 0.00000001; 
   const int max_num_events = 100; 
-  if(r().norm() > (godiva_rad + epsilon) && (material() != MATERIAL_VOID)){
-    std::cout << "Particle position norm is: " << r().norm() << " Which is outside of: " << godiva_rad << '\n';
-    std::cout << "Particle material is: " << material() << " Which is not: " << MATERIAL_VOID << '\n';
-    fatal_error("Particle has traveled outside the radius of the problem and is still being simulated!");
-  }
-  if(fission_counter() > max_num_events){
-    fmt::print("Particle: {} has undergone {} fissions - may be an error\n", id(), fission_counter());
-  }
+  //if(r().norm() > (godiva_rad + epsilon) && (material() != MATERIAL_VOID)){
+    //std::cout << "Particle position norm is: " << r().norm() << " Which is outside of: " << godiva_rad << '\n';
+    //std::cout << "Particle material is: " << material() << " Which is not: " << MATERIAL_VOID << '\n';
+    //fatal_error("Particle has traveled outside the radius of the problem and is still being simulated!");
+  //}
+  //if(fission_counter() > max_num_events){
+    //fmt::print("Particle: {} has undergone {} fissions - may be an error\n", id(), fission_counter());
+  //}
   if(alpha_counter() > max_num_events){
     fmt::print("Particle: {} has undergone {} alpha events - may be an error\n", id(), alpha_counter());
     fmt::print("The current alpha/v cross section is: {}\n", (simulation::alpha_eigenvalue / speed()));

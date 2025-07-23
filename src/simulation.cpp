@@ -30,7 +30,7 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
-#include "xtensor/xview.hpp"
+#include "xtensor/views/xview.hpp"
 
 #ifdef OPENMC_MPI
 #include <mpi.h>
@@ -889,7 +889,6 @@ void transport_history_based_single_particle(Particle& p)
         if (p.collision_distance() > p.boundary().distance) {
           p.event_cross_surface();
         } else if (p.alive()) {
-          p.sanity_check();
           p.event_collide();
         }
       }
