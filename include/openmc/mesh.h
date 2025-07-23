@@ -8,7 +8,7 @@
 
 #include "hdf5.h"
 #include "pugixml.hpp"
-#include "xtensor/xtensor.hpp"
+#include "xtensor.hpp"
 #include <gsl/gsl-lite.hpp>
 
 #include "openmc/bounding_box.h"

@@ -5,12 +5,12 @@
 #include <set>
 #include <string>
 
-#include "xtensor/xindex_view.hpp"
-#include "xtensor/xio.hpp"
-#include "xtensor/xmasked_view.hpp"
-#include "xtensor/xnoalias.hpp"
-#include "xtensor/xstrided_view.hpp"
-#include "xtensor/xview.hpp"
+#include "xtensor/views/xindex_view.hpp"
+#include "xtensor/io/xio.hpp"
+#include "xtensor/views/xmasked_view.hpp"
+#include "xtensor/core/xnoalias.hpp"
+#include "xtensor/views/xstrided_view.hpp"
+#include "xtensor/views/xview.hpp"
 
 #include "openmc/error.h"
 #include "openmc/file_utils.h"
@@ -783,10 +783,10 @@ WeightWindowsGenerator::WeightWindowsGenerator(pugi::xml_node node)
     if (threshold_ <= 0.0)
       fatal_error(fmt::format("Invalid relative error threshold '{}' (<= 0.0) "
                               "specified for weight window generation",
-        ratio_));
+        threshold_));
     if (ratio_ <= 1.0)
       fatal_error(fmt::format("Invalid weight window ratio '{}' (<= 1.0) "
-                              "specified for weight window generation"));
+                              "specified for weight window generation", ratio_));
   } else {
     fatal_error(fmt::format(
       "Unknown weight window update method '{}' specified", method_));

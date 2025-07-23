@@ -8,8 +8,8 @@
 #include "openmc/vector.h"
 
 #include "pugixml.hpp"
-#include "xtensor/xfixed.hpp"
-#include "xtensor/xtensor.hpp"
+#include "xtensor/containers/xfixed.hpp"
+#include "xtensor.hpp"
 #include <gsl/gsl-lite.hpp>
 
 #include <string>

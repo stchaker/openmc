@@ -6,7 +6,7 @@
 #include <unordered_map>
 
 #include "pugixml.hpp"
-#include "xtensor/xarray.hpp"
+#include "xtensor/containers/xarray.hpp"
 
 #include "hdf5.h"
 #include "openmc/cell.h"

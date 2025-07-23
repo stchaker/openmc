@@ -5,7 +5,7 @@
 #include <unordered_map>
 
 #include "pugixml.hpp"
-#include "xtensor/xtensor.hpp"
+#include "xtensor.hpp"
 #include <gsl/gsl-lite.hpp>
 #include <hdf5.h>
 

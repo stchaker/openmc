@@ -5,7 +5,7 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
-#include "xtensor/xtensor.hpp"
+#include "xtensor.hpp"
 
 #include "openmc/bank.h"
 #include "openmc/capi.h"

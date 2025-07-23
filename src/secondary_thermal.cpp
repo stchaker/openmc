@@ -6,7 +6,7 @@
 
 #include <gsl/gsl-lite.hpp>
 
-#include "xtensor/xview.hpp"
+#include "xtensor/views/xview.hpp"
 
 #include <cmath> // for log, exp
 

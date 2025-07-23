@@ -9,12 +9,12 @@
 #include "mpi.h"
 #endif
 
-#include "xtensor/xbuilder.hpp"
-#include "xtensor/xeval.hpp"
-#include "xtensor/xmath.hpp"
-#include "xtensor/xsort.hpp"
-#include "xtensor/xtensor.hpp"
-#include "xtensor/xview.hpp"
+#include "xtensor/generators/xbuilder.hpp"
+#include "xtensor/core/xeval.hpp"
+#include "xtensor/core/xmath.hpp"
+#include "xtensor/misc/xsort.hpp"
+#include "xtensor.hpp"
+#include "xtensor/views/xview.hpp"
 #include <fmt/core.h> // for fmt
 
 #include "openmc/capi.h"
