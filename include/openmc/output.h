@@ -25,6 +25,9 @@ void header(const char* msg, int level);
 //! \return current time stamp (format: "yyyy-mm-dd hh:mm:ss")
 std::string time_stamp();
 
+//! Calculate the mean and standard deviation pairing from a tally
+std::pair<double, double> mean_stdev(const double* x, int n);
+
 //! Display the attributes of a particle.
 void print_particle(Particle& p);
 
@@ -82,7 +85,7 @@ struct formatter<std::array<T, 2>> {
   auto format(const std::array<T, 2>& arr, FormatContext& ctx)
   {
 #endif
-    return format_to(ctx.out(), "({}, {})", arr[0], arr[1]);
+    return fmt::format_to(ctx.out(), "({}, {})", arr[0], arr[1]);
 }
 }; // namespace fmt
 

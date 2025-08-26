@@ -22,6 +22,7 @@
 #include "openmc/tallies/derivative.h"
 #include "openmc/tallies/filter.h"
 #include "openmc/tallies/tally.h"
+#include "openmc/tallies/tally_scoring.h"
 #include "openmc/tallies/trigger.h"
 #include "openmc/timer.h"
 #include "openmc/track_output.h"
@@ -30,7 +31,7 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
-#include "xtensor/xview.hpp"
+#include "xtensor/views/xview.hpp"
 
 #ifdef OPENMC_MPI
 #include <mpi.h>
@@ -41,6 +42,7 @@
 #include <algorithm>
 #include <cmath>
 #include <string>
+#include <iostream>
 
 //==============================================================================
 // C API functions
@@ -173,6 +175,10 @@ int openmc_simulation_finalize()
   if (!simulation::initialized)
     return 0;
 
+  if (settings::alpha_ifp && settings::run_mode == RunMode::EIGENVALUE) {
+    calculate_alpha_ifp(); 
+  }
+
   // Stop active batch timer and start finalization timer
   simulation::time_active.stop();
   simulation::time_finalize.start();
@@ -297,6 +303,8 @@ namespace openmc {
 
 namespace simulation {
 
+double alpha_ifp_value = {0.0}; 
+double alpha_ifp_uncertainty = {0.0}; 
 int current_batch;
 int current_gen;
 bool initialized {false};
@@ -305,6 +313,8 @@ double keff_std;
 double k_col_abs {0.0};
 double k_col_tra {0.0};
 double k_abs_tra {0.0};
+double lambda_eff {0.0};
+bool lambda_eff_calculated {false}; 
 double log_spacing;
 int n_lost_particles {0};
 bool need_depletion_rx {false};
@@ -312,7 +322,7 @@ int restart_batch;
 bool satisfy_triggers {false};
 int ssw_current_file;
 int total_gen {0};
-double total_weight;
+double total_weight; 
 int64_t work_per_rank;
 
 const RegularMesh* entropy_mesh {nullptr};
@@ -326,6 +336,167 @@ vector<int64_t> work_index;
 //==============================================================================
 // Non-member functions
 //==============================================================================
+
+void calculate_alpha_ifp() {
+
+  bool ifp_num_time = false;
+  bool ifp_num_beta = false;
+  bool ifp_denom = false;
+  double num_time, num_time_stdv;
+  double num_beta, num_beta_stdv;
+  double denom, denom_stdv;
+
+  // loop through tallies, store results, otherwise, print a fatal error
+  for (auto i_tally = 0; i_tally < model::tallies.size(); i_tally++){
+
+    // Assign tally a value
+    const auto& tally {*model::tallies[i_tally]};
+
+    // Initialize Filter Matches Object
+    vector<FilterMatch> filter_matches;
+
+    // Allocate space for tally filter matches
+    filter_matches.resize(model::tally_filters.size());
+
+    // Loop over all filter bin combinations.
+    auto filter_iter = FilterBinIter(tally, false, &filter_matches);
+    auto end = FilterBinIter(tally, true, &filter_matches);
+
+    for (; filter_iter != end; ++filter_iter) {
+      auto filter_index = filter_iter.index_;
+
+      // loop through scores within the tally
+      for (auto i_score = 0; i_score < model::tallies[i_tally]->scores_.size(); i_score++){
+        // check for the correct tallies to be present and update the boolean checks
+        if (model::tallies[i_tally]->scores_[i_score] == static_cast<int>(TallyScore::SCORE_IFP_TIME_NUM)){
+          ifp_num_time = true;
+          std::tie(num_time, num_time_stdv) = mean_stdev(&tally.results_(filter_index, i_score, 0), tally.n_realizations_);
+        } else if (model::tallies[i_tally]->scores_[i_score] == static_cast<int>(TallyScore::SCORE_IFP_BETA_NUM)){
+          ifp_num_beta = true;
+          std::tie(num_beta, num_beta_stdv) = mean_stdev(&tally.results_(filter_index, i_score, 0), tally.n_realizations_);
+        } else if (model::tallies[i_tally]->scores_[i_score] == static_cast<int>(TallyScore::SCORE_IFP_DENOM)){
+          ifp_denom = true;
+          std::tie(denom, denom_stdv) = mean_stdev(&tally.results_(filter_index, i_score, 0), tally.n_realizations_);
+        }
+      }
+    }
+  }
+
+  // if the tallies are not present, print a fatal error
+  if (!ifp_num_time || !ifp_num_beta || !ifp_denom){
+    fatal_error("IFP tallies are not present in the simulation, cannot calculate the alpha eigenvalue.");
+  }
+
+  // calculate kinetic parameters from tallies and from the simulation keff and lambda_eff
+  const double beta_eff = num_beta / denom;
+  const double mgt = num_time / denom;
+  const double rho = (simulation::keff - 1.0) / simulation::keff;
+  calculate_lambda_eff();
+  double lambda_eff = simulation::lambda_eff;
+  if (!settings::create_delayed_neutrons){
+    // if we are not using delayed neutrons, set the effective precursor decay constant to 0
+    lambda_eff = 0.0;
+  }
+
+  // calculate the relative uncertainty for all quantities
+  const double rho_stdv_rel = 2 * (simulation::keff_std/simulation::keff);
+  const double mgt_stdv_rel = num_time_stdv / mgt; 
+  double beta_stdv_rel = num_beta_stdv / beta_eff;
+  if(!settings::create_delayed_neutrons){
+    beta_stdv_rel = 0.0; 
+  }
+  
+  // Unsure about decay constant uncertainties, will assume this quantity has none andt
+  // error comes from the approximation in the first place 
+  const double lambda_stdv_rel = 0.0; 
+  
+  // calculate the alpha eigenvalue from IFP tallied values
+  const double s_0 = (lambda_eff * rho) / (beta_eff - rho); 
+  const double s_1 = - (beta_eff - rho) / mgt; 
+  const double s_0_stdv = s_0 * (rho_stdv_rel + beta_stdv_rel + lambda_stdv_rel);
+  const double s_1_stdv = s_1 * (rho_stdv_rel + beta_stdv_rel + mgt_stdv_rel);
+
+  // determine the fundamental mode of the alpha eigenvalue by searching for the most positive of the two root
+  auto select_most_positive_nonzero = [](const double a, const double b) -> double {
+    const double eps = 1e-10; 
+    // Check if values are effectively equal
+    if (std::abs(a - b) < eps) {
+      // roots are equal, throw a fatal error
+      fatal_error("Alpha-IFP calculated equal roots, this is not physical!");
+    }
+
+    // Check if one of the values is zero, if the other is negative, return anyway
+    if (a == 0.0 && b < 0.0) return b;
+    if (b == 0.0 && a < 0.0) return a;
+
+    // General selection of the most positive root if both are non-zero
+    return (a > b) ? ((a != 0.0) ? a : b) : ((b != 0.0) ? b : a);
+  };
+
+  // Assign final alpha value and associated standard deviation
+  simulation::alpha_ifp_value = select_most_positive_nonzero(s_0, s_1);
+  std::cout << "Final alpha value is: " << simulation::alpha_ifp_value << std::endl;  
+
+  if(simulation::alpha_ifp_value == s_0) {
+    simulation::alpha_ifp_uncertainty = s_0_stdv; 
+  } else {
+    simulation::alpha_ifp_uncertainty = s_1_stdv; 
+  }
+
+}
+
+void calculate_lambda_eff() {
+  #pragma omp master
+  {
+    // Use inverse beta weighting to calculate the effective delayed neutron precursor decay constant
+    // Uses a dummy value of 1 MeV to calculate the value
+
+    const double E_in = 1.0E6; // MeV
+    vector<double> lambda_eff_nuclide;
+    vector<double> nuclide_atom_percent;
+    double fissionable_atom_density = 0.0;
+
+    // Loop over materials and then nuclides within the material
+    for (const auto& mat : model::materials) {
+      // First we loop over all nuclides and store the atom density of only the fissionable nuclides to the sum
+      for (int i_nuclide : mat->nuclide_) {
+        const auto& nuc = data::nuclides[i_nuclide];
+        if(nuc->fissionable_){
+          fissionable_atom_density += mat->atom_density_[i_nuclide];
+        }
+      }
+    }
+
+    // Now we loop over all nuclides in materials and if fissionable, we calculate the effective decay constant
+    // We then append the atom density of the nuclide to the vector by dividing the atom density by the total fissionable atom density
+    for (const auto& mat : model::materials) {
+      for (int i_nuclide : mat->nuclide_) {
+        const auto& nuc = data::nuclides[i_nuclide];
+        if(nuc->fissionable_){
+          const auto& rx = nuc->fission_rx_[0]; 
+          // Loop on the number of delayed neutron precursors
+          double beta_eff = 0.0;
+          double inverse_beta = 0.0;
+          for (int i = 1; i < (nuc->n_precursor_ + 1); i++) {
+            // Calculate the effective decay constant for each delayed neutron precursor
+            // this is done through inverse beta weighting for each fissionable nuclide
+            const auto& product = rx->products_[i];
+            inverse_beta += (*product.yield_)(E_in) / product.decay_rate_; 
+            beta_eff += (*product.yield_)(E_in);
+          }
+          // append to the lambda_eff_nuclide vector and append the atom percent of the nuclide to the nuclide_atom_percent vector
+          lambda_eff_nuclide.emplace_back(beta_eff / inverse_beta);
+          nuclide_atom_percent.emplace_back(mat->atom_density_[i_nuclide] / fissionable_atom_density);
+        }
+      }
+    }
+
+    // Calculate the effective decay constant for the entire simulation, signal that this process executed successfully
+    simulation::lambda_eff = std::inner_product(lambda_eff_nuclide.begin(), lambda_eff_nuclide.end(), nuclide_atom_percent.begin(), 0.0);
+    simulation::lambda_eff_calculated = true;
+    std::cout << "Value of effective precursor decay constant is: " << simulation::lambda_eff << std::endl;
+  }
+}
 
 void allocate_banks()
 {

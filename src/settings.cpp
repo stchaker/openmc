@@ -44,6 +44,7 @@ namespace settings {
 
 // Default values for boolean flags
 bool assume_separate {false};
+bool alpha_ifp {false}; 
 bool check_overlaps {false};
 bool cmfd_run {false};
 bool confidence_intervals {false};
@@ -1069,6 +1070,10 @@ void read_settings_xml(pugi::xml_node root)
       fatal_error("'ifp_n_generation' must be lower than or equal to the "
                   "number of inactive cycles.");
     }
+  }
+
+  if (check_for_node(root, "alpha_ifp")) {
+    alpha_ifp = get_node_value_bool(root, "alpha_ifp"); 
   }
 
   // Check for tabular_legendre options

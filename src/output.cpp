@@ -17,7 +17,7 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
-#include "xtensor/xview.hpp"
+#include "xtensor/views/xview.hpp"
 
 #include "openmc/capi.h"
 #include "openmc/cell.h"
@@ -550,6 +550,10 @@ void print_results()
         fmt::print(" Combined k-effective        = {:.5f} +/- {:.5f}\n",
           k_combined[0], k_combined[1]);
       }
+      if (settings::alpha_ifp) {
+        fmt::print(" Alpha eigenvalue            = {:.5f} +/- {:.5f}\n",
+          simulation::alpha_ifp_value/1E6, simulation::alpha_ifp_uncertainty/1E6);
+      }
     }
     std::tie(mean, stdev) = mean_stdev(&gt(GlobalTally::LEAKAGE, 0), n);
     fmt::print(
@@ -566,6 +570,10 @@ void print_results()
         gt(GlobalTally::K_TRACKLENGTH, TallyResult::SUM) / n);
       fmt::print(" k-effective (Absorption)   = {:.5f}\n",
         gt(GlobalTally::K_ABSORPTION, TallyResult::SUM) / n);
+      if (settings::alpha_ifp) {
+        fmt::print(" Alpha eigenvalue            = {:.5f}\n",
+          simulation::alpha_ifp_value/1E6);
+      }
     }
     fmt::print(" Leakage Fraction           = {:.5f}\n",
       gt(GlobalTally::LEAKAGE, TallyResult::SUM) / n);

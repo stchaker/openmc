@@ -40,6 +40,7 @@ namespace settings {
 
 // Boolean flags
 extern bool assume_separate;      //!< assume tallies are spatially separate?
+extern bool alpha_ifp;            //!< calculate alpha eigenvalue using IFP in k-eigenvalue run?
 extern bool check_overlaps;       //!< check overlaps in geometry?
 extern bool confidence_intervals; //!< use confidence intervals for results?
 extern bool

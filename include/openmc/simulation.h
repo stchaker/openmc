@@ -22,16 +22,20 @@ constexpr int STATUS_EXIT_ON_TRIGGER {2};
 
 namespace simulation {
 
+extern "C" double alpha_ifp_value; //!< current alpha-eigenvalue from IFP alpha method
+extern "C" double alpha_ifp_uncertainty; //!< uncertainty in alpha-eigenvalue from IFP 
 extern "C" int current_batch; //!< current batch
 extern "C" int current_gen;   //!< current fission generation
 extern "C" bool initialized;  //!< has simulation been initialized?
 extern "C" double keff;       //!< average k over batches
 extern "C" double keff_std;   //!< standard deviation of average k
-extern "C" double k_col_abs; //!< sum over batches of k_collision * k_absorption
+extern "C" double k_col_abs; //!< sum over batches of k_collision * k_absorpstion
 extern "C" double
   k_col_tra; //!< sum over batches of k_collision * k_tracklength
 extern "C" double
   k_abs_tra;               //!< sum over batches of k_absorption * k_tracklength
+extern double lambda_eff;  //!< effective decay constant calculated for alpha-ifp 
+extern "C" bool lambda_eff_calculated; //!< has lambda_eff been calculated? 
 extern double log_spacing; //!< lethargy spacing for energy grid searches
 extern "C" int n_lost_particles;   //!< cumulative number of lost particles
 extern "C" bool need_depletion_rx; //!< need to calculate depletion rx?
@@ -56,6 +60,12 @@ extern vector<int64_t> work_index;
 
 //! Allocate space for source and fission banks
 void allocate_banks();
+
+//! Calculate the alpha-eigenvalue via IFP
+void calculate_alpha_ifp(); 
+
+//! Calculate the effective delayed neutron precursor decay constant
+void calculate_lambda_eff(); 
 
 //! Determine number of particles to transport per process
 void calculate_work();

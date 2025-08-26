@@ -8,7 +8,7 @@
 #include "openmc/simulation.h"
 #include "openmc/vector.h"
 
-#include "xtensor/xtensor.hpp"
+#include "xtensor.hpp"
 #include <fmt/core.h>
 #include <hdf5.h>
 
