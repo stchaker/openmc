@@ -551,7 +551,7 @@ void print_results()
           k_combined[0], k_combined[1]);
       }
       if (settings::alpha_ifp) {
-        fmt::print(" Alpha eigenvalue            = {:.5f} +/- {:.5f}\n",
+        fmt::print(" Alpha eigenvalue            = {:.6f} +/- {:.6f}\n",
           simulation::alpha_ifp_value/1E6, simulation::alpha_ifp_uncertainty/1E6);
       }
     }
@@ -571,7 +571,7 @@ void print_results()
       fmt::print(" k-effective (Absorption)   = {:.5f}\n",
         gt(GlobalTally::K_ABSORPTION, TallyResult::SUM) / n);
       if (settings::alpha_ifp) {
-        fmt::print(" Alpha eigenvalue            = {:.5f}\n",
+        fmt::print(" Alpha eigenvalue            = {:.6f}\n",
           simulation::alpha_ifp_value/1E6);
       }
     }
