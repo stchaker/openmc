@@ -8,9 +8,14 @@
 
 #include <cstring>
 #include <iostream>
+#include <variant>
+
 namespace openmc {
 namespace simulation {
 SharedArray<SourceSite> time_slice_bank;
+SharedArray<SourceSite> neutron_census;
+vector<double> precursor_concentrations;  
+std::variant<std::monostate, RectilinearMesh, SphericalMesh, CylindricalMesh> precursor_mesh; 
 double max_track_segment_time {0.0};
 bool time_slice_bank_written = false;
 } // namespace simulation
@@ -275,14 +280,14 @@ vector<double> read_precursor_concentrations(const std::string& sourcefile) {
 }
 
 // function to get time-sliced particle sites from transient source
-vector<SourceSite> read_timeslice_source(const std::string& sourcefile){
+SharedArray<SourceSite> read_timeslice_source(const std::string& sourcefile){
   FileSource source = FileSource(sourcefile);
-  vector<SourceSite> sites = source.get_sites_from_file();
+  SharedArray<SourceSite> sites = source.get_sites_from_file();
   return sites; 
 }
 
 // get the type of mesh from the prec_mesh group in the transient_source.h5 file
-const std::string get_mesh_type(const std::string& sourcefile){
+const std::string get_mesh_shape(const std::string& sourcefile){
   // read in the dataset to determine the type
   hid_t file_id = file_open(sourcefile, 'r', false);
   hid_t mesh_group = H5Gopen2(file_id, "prec_mesh", H5P_DEFAULT);
@@ -341,7 +346,7 @@ RectilinearMesh get_rectilinear_precmesh(const std::string& sourcefile) {
   return precursor_mesh; 
 }
 
-// routine to finalize the transient_source.h5 file needed for dynamic simulation
+// routine to finalize the transient_source.h5 file needed for kinetic simulation
 void finalize_transient_source()
 {
   // dataspace dimensions
@@ -435,5 +440,32 @@ void finalize_transient_source()
   // print message indicating that the transient source was created succesfully
   write_message(
     1, "The transient_source.h5 source file was created succesfully!");
+}
+
+// core function for reading in transient data to start kinetic simulation runs.
+void read_transient_source() {
+  write_message("Reading in transient source information...", 1); 
+
+  const std::string source_file = "transient_source.h5"; 
+  const std::string mesh_type = get_mesh_shape(source_file); 
+
+  simulation::precursor_mesh = read_precursor_concentrations(source_file); 
+  simulation::neutron_census = read_timeslice_source(source_file); 
+
+  if(mesh_type == "rectilinear") {
+    simulation::precursor_mesh = get_rectilinear_precmesh(source_file); 
+  } else if(mesh_type == "spherical") {
+    simulation::precursor_mesh = get_spherical_precmesh(source_file); 
+  } else if(mesh_type == "cylindrical") {
+    simulation::precursor_mesh = get_cylindrical_precmesh(source_file);
+  }
+
+  if(std::holds_alternative<std::monostate>(simulation::precursor_mesh)) {
+    fatal_error("Precursor mesh not constructed, incorrect type assigned, must be one of: \
+      RectinlinearMesh, SphericalMesh, CylindricalMesh"); 
+  }
+
+  write_message("Transient source succesfully constructed!", 1); 
+  
 }
 } // namespace openmc

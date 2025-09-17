@@ -9,6 +9,8 @@
 #include "mesh.h"
 #include "hdf5.h"
 
+#include <variant>
+
 namespace openmc {
 
 //=====================================================================
@@ -17,6 +19,9 @@ namespace openmc {
 
 namespace simulation {
   extern SharedArray<SourceSite> time_slice_bank;
+  extern SharedArray<SourceSite> neutron_census; 
+  extern vector<double> precursor_concentrations;
+  extern std::variant<std::monostate, RectilinearMesh, SphericalMesh, CylindricalMesh> precursor_mesh; 
 
   // This is the maximum time taken to traverse any segment of the neutron flight 
   // path. When sampling neutrons in flight for a transient simulation to be 
@@ -35,7 +40,7 @@ void check_correct_tallies(hid_t obj_id_dnp, hid_t obj_id_neutron); // function 
 
 void get_tally_shape(hid_t obj_id, hsize_t* dims); // function to get the shape of the tally data in transient_statepoint file
 
-void read_tally_data(hid_t obj_id, hsize_t* dims, double* data); // function to read in the tally data from transient_statepoint file
+void read_tally_data(hid_t obj_id, hsize_t* dims, const int ndims, double* data); // function to read in the tally data from transient_statepoint file
 
 vector<double> create_dnp_neutron_ratios(const vector<double>& dnps, const vector<double>& neutrons); // function to get dnp/neutron ratios for dmc startup.
 
@@ -53,9 +58,9 @@ vector<double> read_data(const std::string& sourcefile, const std::string& attr,
 
 vector<double> read_precursor_concentrations(const std::string& sourcefile); // function to read into memory the precursor concentrations from the transient_source.h5 file
 
-vector<SourceSite> read_timeslice_source(const std::string& sourcefile); // function to read into memory the initial set of SourceSites for the transient run.
+SharedArray<SourceSite> read_timeslice_source(const std::string& sourcefile); // function to read into memory the initial set of SourceSites for the transient run.
 
-const std::string get_mesh_type(const std::string& sourcefile); // function to get the mesh type from the transient_source.h5 file.
+const std::string get_mesh_shape(const std::string& sourcefile); // function to get the mesh type from the transient_source.h5 file.
 
 // the following three functions are used to read in the precursor mesh depending on the mesh type 
 SphericalMesh get_spherical_precmesh(const std::string& sourcefile);
@@ -66,6 +71,7 @@ RectilinearMesh get_rectilinear_precmesh(const std::string& sourcefile);
 
 void finalize_transient_source(); // function to generate the transient_source.h5 file for use in dynamic simulation runs.
 
+void read_transient_source(); // function to load in the transient_source.h5 file for use in dynamic simulation runs. 
 } // namespace openmc
 
 #endif // OPENMC_TRANSIENT_H
