@@ -6,18 +6,28 @@
 
 #include "hdf5.h"
 
+#include <algorithm>
 #include <cstring>
 #include <iostream>
 #include <variant>
 
 namespace openmc {
 namespace simulation {
+
 SharedArray<SourceSite> time_slice_bank;
+
 SharedArray<SourceSite> neutron_census;
+
 vector<double> precursor_concentrations;  
+
 std::variant<std::monostate, RectilinearMesh, SphericalMesh, CylindricalMesh> precursor_mesh; 
+
+double k_t {1.0}; 
+
 double max_track_segment_time {0.0};
+
 bool time_slice_bank_written = false;
+
 } // namespace simulation
 
 // function to check for both tallies existence once the file is opened, and to
@@ -205,9 +215,10 @@ void write_out_mesh(hid_t statepoint_file)
   const std::string filename = "transient_source.h5";
   hid_t source_file = file_open(filename, 'a', false);
 
-  // get the mesh from the statepoint and copy it to the transient_source file
-  H5Ocopy(statepoint_file, "/tallies/meshes/mesh 1", source_file, "/prec_mesh",
-    H5P_DEFAULT, H5P_DEFAULT);
+  herr_t status = H5Ocopy(statepoint_file, "/tallies/meshes/mesh 1",
+                          source_file, "/prec_mesh",
+                          H5P_DEFAULT, H5P_DEFAULT);
+
 
   // close the opened source file
   file_close(source_file);
@@ -235,6 +246,18 @@ void write_out_keff(double keff) {
   H5Sclose(keff_dataspace);
   H5Dclose(keff_dataset);
   file_close(source_file);
+}
+
+// read back in the transient keff value
+void read_in_keff(const std::string& sourcefile) {
+  hid_t source_file = file_open(sourcefile, 'r', false); 
+
+  hid_t dset = H5Dopen2(source_file, "/keff", H5P_DEFAULT); 
+
+  herr_t status = H5Dread(dset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &simulation::k_t); 
+
+  H5Dclose(dset); 
+  file_close(source_file); 
 }
 
 // utility function to read in vector double values from the source file 
@@ -273,17 +296,18 @@ vector<double> read_data(const std::string& sourcefile, const std::string& attr,
 }
 
 // function to read in the precursor vector from the transient_source.h5 file
-vector<double> read_precursor_concentrations(const std::string& sourcefile) {
+void read_precursor_concentrations(const std::string& sourcefile) {
   const std::string group_name = "precursor_concentrations";
   vector<double> prec_concentrations = read_data(sourcefile, group_name, false);
-  return prec_concentrations; 
+  simulation::precursor_concentrations = prec_concentrations;  
 }
 
 // function to get time-sliced particle sites from transient source
-SharedArray<SourceSite> read_timeslice_source(const std::string& sourcefile){
+void read_timeslice_source(const std::string& sourcefile){
   FileSource source = FileSource(sourcefile);
-  SharedArray<SourceSite> sites = source.get_sites_from_file();
-  return sites; 
+  vector<SourceSite> sites = source.get_sites_from_file();
+  simulation::neutron_census.reserve(sites.size() * 3);
+  std::copy(sites.begin(), sites.end(), simulation::neutron_census.data());  
 }
 
 // get the type of mesh from the prec_mesh group in the transient_source.h5 file
@@ -443,21 +467,21 @@ void finalize_transient_source()
 }
 
 // core function for reading in transient data to start kinetic simulation runs.
-void read_transient_source() {
-  write_message("Reading in transient source information...", 1); 
+void read_transient_source(const std::string& sourcefile) {
+  write_message(1, "Reading in transient source information...", 1); 
 
-  const std::string source_file = "transient_source.h5"; 
-  const std::string mesh_type = get_mesh_shape(source_file); 
+  const std::string mesh_type = get_mesh_shape(sourcefile); 
 
-  simulation::precursor_mesh = read_precursor_concentrations(source_file); 
-  simulation::neutron_census = read_timeslice_source(source_file); 
+  read_precursor_concentrations(sourcefile); 
+  read_timeslice_source(sourcefile); 
+  read_in_keff(sourcefile); 
 
   if(mesh_type == "rectilinear") {
-    simulation::precursor_mesh = get_rectilinear_precmesh(source_file); 
+    simulation::precursor_mesh = get_rectilinear_precmesh(sourcefile); 
   } else if(mesh_type == "spherical") {
-    simulation::precursor_mesh = get_spherical_precmesh(source_file); 
+    simulation::precursor_mesh = get_spherical_precmesh(sourcefile); 
   } else if(mesh_type == "cylindrical") {
-    simulation::precursor_mesh = get_cylindrical_precmesh(source_file);
+    simulation::precursor_mesh = get_cylindrical_precmesh(sourcefile);
   }
 
   if(std::holds_alternative<std::monostate>(simulation::precursor_mesh)) {
@@ -465,7 +489,7 @@ void read_transient_source() {
       RectinlinearMesh, SphericalMesh, CylindricalMesh"); 
   }
 
-  write_message("Transient source succesfully constructed!", 1); 
-  
+  write_message(1, "Transient source succesfully constructed!"); 
+
 }
 } // namespace openmc

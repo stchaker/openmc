@@ -18,10 +18,10 @@ namespace openmc {
 //=====================================================================
 
 namespace simulation {
-  extern SharedArray<SourceSite> time_slice_bank;
-  extern SharedArray<SourceSite> neutron_census; 
-  extern vector<double> precursor_concentrations;
-  extern std::variant<std::monostate, RectilinearMesh, SphericalMesh, CylindricalMesh> precursor_mesh; 
+  extern SharedArray<SourceSite> time_slice_bank; // time-slice bank of source neutrons
+  extern SharedArray<SourceSite> neutron_census; // neutron census used as bank for kinetic runs
+  extern vector<double> precursor_concentrations; // vector of precursor concentrations, 6 per mesh cell
+  extern std::variant<std::monostate, RectilinearMesh, SphericalMesh, CylindricalMesh> precursor_mesh; // object which functions as the precursor mesh
 
   // This is the maximum time taken to traverse any segment of the neutron flight 
   // path. When sampling neutrons in flight for a transient simulation to be 
@@ -29,8 +29,9 @@ namespace simulation {
   // they exist. So, this is a normalizing constant for the probability. There is 
   // a small change we encounter a probability greater than one, and in that case 
   // we round down to one.
-  extern double max_track_segment_time;
-  extern bool time_slice_bank_written ;
+  extern double k_t; // k-eigenvalue from k-eig run used to normalize fission source of kinetic runs
+  extern double max_track_segment_time; // max track segment time used to normalize the time-slice source
+  extern bool time_slice_bank_written ; // bool to determine if the time slice source was written to hdf5
 
 } // namespace simulation
 
@@ -54,11 +55,13 @@ void write_out_mesh(hid_t statepoint_file); // function to copy over precursor m
 
 void write_out_keff(double keff); // function to write the simulation keff value to the transient source file.
 
+void read_in_keff(const std::string& sourcefile); // function to read in transient normalizing keff
+
 vector<double> read_data(const std::string& sourcefile, const std::string& attr, bool within_mesh);
 
-vector<double> read_precursor_concentrations(const std::string& sourcefile); // function to read into memory the precursor concentrations from the transient_source.h5 file
+void read_precursor_concentrations(const std::string& sourcefile); // function to read into memory the precursor concentrations from the transient_source.h5 file
 
-SharedArray<SourceSite> read_timeslice_source(const std::string& sourcefile); // function to read into memory the initial set of SourceSites for the transient run.
+void read_timeslice_source(const std::string& sourcefile); // function to read into memory the initial set of SourceSites for the transient run.
 
 const std::string get_mesh_shape(const std::string& sourcefile); // function to get the mesh type from the transient_source.h5 file.
 
@@ -71,7 +74,7 @@ RectilinearMesh get_rectilinear_precmesh(const std::string& sourcefile);
 
 void finalize_transient_source(); // function to generate the transient_source.h5 file for use in dynamic simulation runs.
 
-void read_transient_source(); // function to load in the transient_source.h5 file for use in dynamic simulation runs. 
+void read_transient_source(const std::string& sourcefile); // function to load in the transient_source.h5 file for use in dynamic simulation runs. 
 } // namespace openmc
 
 #endif // OPENMC_TRANSIENT_H

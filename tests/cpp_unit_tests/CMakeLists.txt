@@ -4,6 +4,7 @@ set(TEST_NAMES
   test_tally
   test_interpolate
   test_math
+  test_transient_source
   # Add additional unit test files here
 )
 
