@@ -373,7 +373,7 @@ void print_columns()
     fmt::print("  Bat./Gen.      k       Entropy         Average k \n"
                "  =========   ========   ========   ====================\n");
   }else if (settings::run_mode == RunMode::ALPHA) {
-    fmt::print("  Bat./Gen.      k             Average k           alpha [1/mus]       Average alpha[1/mus] \n"
+    fmt::print("  Bat./Gen.      k             Average k           alpha [1/µs]       Average alpha[1/µs] \n"
                "  =========   ========   =====================    ===============    =========================       \n");
   } else {
     fmt::print("  Bat./Gen.      k            Average k\n"
@@ -566,12 +566,12 @@ void print_results()
           k_combined[0], k_combined[1]);
       }
       if (settings::alpha_ifp) {
-        fmt::print(" Alpha eigenvalue            = {:.6f} +/- {:.6f}\n",
+        fmt::print(" Alpha eigenvalue [1/µs]            = {:.6f} +/- {:.6f}\n",
           simulation::alpha_ifp_value/1E6, simulation::alpha_ifp_uncertainty/1E6);
       }
     }
     if(settings::run_mode == RunMode::ALPHA){
-      fmt::print(" Average Alpha-eigenvalue [1/mus]    = {:.9f}\n", simulation::alpha_eigenvalue_average/1E6);
+      fmt::print(" Average Alpha-eigenvalue [1/µs]    = {:.9f}\n", simulation::alpha_eigenvalue_average/1E6);
     }
     std::tie(mean, stdev) = mean_stdev(&gt(GlobalTally::LEAKAGE, 0), n);
     fmt::print(
@@ -590,12 +590,12 @@ void print_results()
       fmt::print(" k-effective (Absorption)   = {:.5f}\n",
         gt(GlobalTally::K_ABSORPTION, TallyResult::SUM) / n);
       if (settings::alpha_ifp) {
-        fmt::print(" Alpha eigenvalue            = {:.6f}\n",
+        fmt::print(" Alpha eigenvalue [1/µs]            = {:.6f}\n",
           simulation::alpha_ifp_value/1E6);
       }
     }
     if (settings::run_mode == RunMode::ALPHA) {
-      fmt::print(" Average Alpha-eigenvalue    = {:.9f}\n", simulation::alpha_eigenvalue_average / 1E6);
+      fmt::print(" Average Alpha-eigenvalue [1/µs]    = {:.9f}\n", simulation::alpha_eigenvalue_average / 1E6);
     }
     fmt::print(" Leakage Fraction           = {:.5f}\n",
       gt(GlobalTally::LEAKAGE, TallyResult::SUM) / n);

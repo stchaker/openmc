@@ -470,8 +470,6 @@ void calculate_alpha_ifp()
 
   // Assign final alpha value and associated standard deviation
   simulation::alpha_ifp_value = select_most_positive_nonzero(s_0, s_1);
-  std::cout << "Final alpha value is: " << simulation::alpha_ifp_value
-            << std::endl;
 
   if (simulation::alpha_ifp_value == s_0) {
     simulation::alpha_ifp_uncertainty = s_0_stdv;
@@ -539,8 +537,6 @@ void calculate_lambda_eff()
     simulation::lambda_eff = std::inner_product(lambda_eff_nuclide.begin(),
       lambda_eff_nuclide.end(), nuclide_atom_percent.begin(), 0.0);
     simulation::lambda_eff_calculated = true;
-    std::cout << "Value of effective precursor decay constant is: "
-              << simulation::lambda_eff << std::endl;
   }
 }
 
