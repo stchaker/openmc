@@ -250,10 +250,10 @@ void Particle::event_advance()
   // Select smaller of the two, or three if alpha run-mode, distances
   double distance = 0.0;
   if (settings::run_mode == RunMode::ALPHA) {
-    distance = std::min(boundary().distance, collision_distance());
+    distance = std::min(boundary().distance(), collision_distance());
     distance = std::min(alpha_event_distance(), distance);
   } else {
-    distance = std::min(boundary().distance, collision_distance());
+    distance = std::min(boundary().distance(), collision_distance());
   }
 
   // Advance particle in space and time
@@ -373,14 +373,14 @@ void Particle::event_alpha()
   // Set all directions to base level -- right now, after a collision, only
   // the base level directions are changed
   for (int j = 0; j < n_coord() - 1; ++j) {
-    if (coord(j + 1).rotated) {
+    if (coord(j + 1).rotated()) {
       // If next level is rotated, apply rotation matrix
-      const auto& m {model::cells[coord(j).cell]->rotation_};
-      const auto& u {coord(j).u};
-      coord(j + 1).u = u.rotate(m);
+      const auto& m {model::cells[coord(j).cell()]->rotation_};
+      const auto& u {coord(j).u()};
+      coord(j + 1).u() = u.rotate(m);
     } else {
       // Otherwise, copy this level's direction
-      coord(j + 1).u = coord(j).u;
+      coord(j + 1).u() = coord(j).u();
     }
   }
 }

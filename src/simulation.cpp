@@ -1070,8 +1070,8 @@ void transport_history_based_single_particle(Particle& p)
         p.event_advance();
       }
       if (p.alive()) {
-        if ((p.collision_distance() > p.boundary().distance) &&
-            (p.alpha_event_distance() > p.boundary().distance)) {
+        if ((p.collision_distance() > p.boundary().distance()) &&
+            (p.alpha_event_distance() > p.boundary().distance())) {
           p.event_cross_surface();
         } else if (p.alive()) {
           if (p.collision_distance() > p.alpha_event_distance()) {
@@ -1093,7 +1093,7 @@ void transport_history_based_single_particle(Particle& p)
         p.event_advance();
       }
       if (p.alive()) {
-        if (p.collision_distance() > p.boundary().distance) {
+        if (p.collision_distance() > p.boundary().distance()) {
           p.event_cross_surface();
         } else if (p.alive()) {
           p.event_collide();
