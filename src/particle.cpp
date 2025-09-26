@@ -176,7 +176,7 @@ void Particle::event_calculate_xs()
   // If the cell hasn't been determined based on the particle's location,
   // initiate a search for the current cell. This generally happens at the
   // beginning of the history and again for any secondary particles
-  if (lowest_coord().cell == C_NONE) {
+  if (lowest_coord().cell() == C_NONE) {
     if (!exhaustive_find_cell(*this)) {
       mark_as_lost(
         "Could not find the cell containing particle " + std::to_string(id()));
@@ -185,11 +185,11 @@ void Particle::event_calculate_xs()
 
     // Set birth cell attribute
     if (cell_born() == C_NONE)
-      cell_born() = lowest_coord().cell;
+      cell_born() = lowest_coord().cell();
 
     // Initialize last cells from current cell
     for (int j = 0; j < n_coord(); ++j) {
-      cell_last(j) = coord(j).cell;
+      cell_last(j) = coord(j).cell();
     }
     n_coord_last() = n_coord();
   }
@@ -243,15 +243,16 @@ void Particle::event_advance()
 
   // Sample a distance to alpha event
   if (type() == ParticleType::neutron && settings::run_mode == RunMode::ALPHA) {
-    alpha_event_distance() = -std::log(prn(current_seed())) / (abs(simulation::alpha_eigenvalue) / speed());
+    alpha_event_distance() = -std::log(prn(current_seed())) /
+                             (abs(simulation::alpha_eigenvalue) / speed());
   }
 
-  // Select smaller of the two distances
+  // Select smaller of the two, or three if alpha run-mode, distances
   double distance = 0.0;
   if (settings::run_mode == RunMode::ALPHA) {
     distance = std::min(boundary().distance, collision_distance());
     distance = std::min(alpha_event_distance(), distance);
-  } else {  
+  } else {
     distance = std::min(boundary().distance, collision_distance());
   }
 
@@ -259,7 +260,7 @@ void Particle::event_advance()
   // Short-term solution until the surface source is revised and we can use
   // this->move_distance(distance)
   for (int j = 0; j < n_coord(); ++j) {
-    coord(j).r += distance * coord(j).u;
+    coord(j).r() += distance * coord(j).u();
   }
   double dt = distance / this->speed();
   this->time() += dt;
@@ -284,7 +285,8 @@ void Particle::event_advance()
   }
 
   // Score track-length estimate of k-eff
-  if ((settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) &&
+  if ((settings::run_mode == RunMode::EIGENVALUE ||
+        settings::run_mode == RunMode::ALPHA) &&
       type() == ParticleType::neutron) {
     keff_tally_tracklength() += wgt() * distance * macro_xs().nu_fission;
   }
@@ -304,17 +306,17 @@ void Particle::event_cross_surface()
 {
   // Saving previous cell data
   for (int j = 0; j < n_coord(); ++j) {
-    cell_last(j) = coord(j).cell;
+    cell_last(j) = coord(j).cell();
   }
   n_coord_last() = n_coord();
 
   // Set surface that particle is on and adjust coordinate levels
-  surface() = boundary().surface;
-  n_coord() = boundary().coord_level;
+  surface() = boundary().surface();
+  n_coord() = boundary().coord_level();
 
-  if (boundary().lattice_translation[0] != 0 ||
-      boundary().lattice_translation[1] != 0 ||
-      boundary().lattice_translation[2] != 0) {
+  if (boundary().lattice_translation()[0] != 0 ||
+      boundary().lattice_translation()[1] != 0 ||
+      boundary().lattice_translation()[2] != 0) {
     // Particle crosses lattice boundary
 
     bool verbose = settings::verbosity >= 10 || trace();
@@ -343,10 +345,11 @@ void Particle::event_cross_surface()
   }
 }
 
-void Particle::event_alpha() {
+void Particle::event_alpha()
+{
   // Handle alpha eigenvalue events in this kernel
   if (simulation::alpha_eigenvalue < 0) {
-    sample_alpha_production(*this); 
+    sample_alpha_production(*this);
   } else {
     sample_alpha_absorption(*this);
   }
@@ -380,14 +383,13 @@ void Particle::event_alpha() {
       coord(j + 1).u = coord(j).u;
     }
   }
-
 }
 
 void Particle::event_collide()
 {
   // Score collision estimate of keff
   if ((settings::run_mode == RunMode::EIGENVALUE ||
-       settings::run_mode == RunMode::ALPHA) &&
+        settings::run_mode == RunMode::ALPHA) &&
       type() == ParticleType::neutron) {
     keff_tally_collision() += wgt() * macro_xs().nu_fission / macro_xs().total;
   }
@@ -445,14 +447,14 @@ void Particle::event_collide()
   // Set all directions to base level -- right now, after a collision, only
   // the base level directions are changed
   for (int j = 0; j < n_coord() - 1; ++j) {
-    if (coord(j + 1).rotated) {
+    if (coord(j + 1).rotated()) {
       // If next level is rotated, apply rotation matrix
-      const auto& m {model::cells[coord(j).cell]->rotation_};
-      const auto& u {coord(j).u};
-      coord(j + 1).u = u.rotate(m);
+      const auto& m {model::cells[coord(j).cell()]->rotation_};
+      const auto& u {coord(j).u()};
+      coord(j + 1).u() = u.rotate(m);
     } else {
       // Otherwise, copy this level's direction
-      coord(j + 1).u = coord(j).u;
+      coord(j + 1).u() = coord(j).u();
     }
   }
 
@@ -497,7 +499,7 @@ void Particle::event_revive_from_secondary()
       // Since the birth cell of the particle has not been set we
       // have to determine it before the energy of the secondary particle can be
       // removed from the pulse-height of this cell.
-      if (lowest_coord().cell == C_NONE) {
+      if (lowest_coord().cell() == C_NONE) {
         bool verbose = settings::verbosity >= 10 || trace();
         if (!exhaustive_find_cell(*this, verbose)) {
           mark_as_lost("Could not find the cell containing particle " +
@@ -506,11 +508,11 @@ void Particle::event_revive_from_secondary()
         }
         // Set birth cell attribute
         if (cell_born() == C_NONE)
-          cell_born() = lowest_coord().cell;
+          cell_born() = lowest_coord().cell();
 
         // Initialize last cells from current cell
         for (int j = 0; j < n_coord(); ++j) {
-          cell_last(j) = coord(j).cell;
+          cell_last(j) = coord(j).cell();
         }
         n_coord_last() = n_coord();
       }
@@ -556,7 +558,8 @@ void Particle::event_death()
 
   // Record the number of progeny created by this particle.
   // This data will be used to efficiently sort the fission bank.
-  if ((settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA)) {
+  if ((settings::run_mode == RunMode::EIGENVALUE ||
+        settings::run_mode == RunMode::ALPHA)) {
     int64_t offset = id() - 1 - simulation::work_index[mpi::rank];
     simulation::progeny_per_particle[offset] = n_progeny();
   }
@@ -568,7 +571,7 @@ void Particle::pht_collision_energy()
 
   // determine index of cell in pulse_height_cells
   auto it = std::find(model::pulse_height_cells.begin(),
-    model::pulse_height_cells.end(), lowest_coord().cell);
+    model::pulse_height_cells.end(), lowest_coord().cell());
 
   if (it != model::pulse_height_cells.end()) {
     int index = std::distance(model::pulse_height_cells.begin(), it);
@@ -597,22 +600,28 @@ void Particle::pht_secondary_particles()
   }
 }
 
-void Particle::sanity_check(){
+void Particle::sanity_check()
+{
   const double godiva_rad = 8.7407;
-  const double epsilon = 0.00000001; 
-  const int max_num_events = 100; 
-  //if(r().norm() > (godiva_rad + epsilon) && (material() != MATERIAL_VOID)){
-    //std::cout << "Particle position norm is: " << r().norm() << " Which is outside of: " << godiva_rad << '\n';
-    //std::cout << "Particle material is: " << material() << " Which is not: " << MATERIAL_VOID << '\n';
-    //fatal_error("Particle has traveled outside the radius of the problem and is still being simulated!");
+  const double epsilon = 0.00000001;
+  const int max_num_events = 100;
+  // if(r().norm() > (godiva_rad + epsilon) && (material() != MATERIAL_VOID)){
+  // std::cout << "Particle position norm is: " << r().norm() << " Which is
+  // outside of: " << godiva_rad << '\n'; std::cout << "Particle material is: "
+  // << material() << " Which is not: " << MATERIAL_VOID << '\n';
+  // fatal_error("Particle has traveled outside the radius of the problem and is
+  // still being simulated!");
   //}
-  //if(fission_counter() > max_num_events){
-    //fmt::print("Particle: {} has undergone {} fissions - may be an error\n", id(), fission_counter());
+  // if(fission_counter() > max_num_events){
+  // fmt::print("Particle: {} has undergone {} fissions - may be an error\n",
+  // id(), fission_counter());
   //}
-  if(alpha_counter() > max_num_events){
-    fmt::print("Particle: {} has undergone {} alpha events - may be an error\n", id(), alpha_counter());
-    fmt::print("The current alpha/v cross section is: {}\n", (simulation::alpha_eigenvalue / speed()));
-    fmt::print("The current total cross section is: {}\n\n", macro_xs().total); 
+  if (alpha_counter() > max_num_events) {
+    fmt::print("Particle: {} has undergone {} alpha events - may be an error\n",
+      id(), alpha_counter());
+    fmt::print("The current alpha/v cross section is: {}\n",
+      (simulation::alpha_eigenvalue / speed()));
+    fmt::print("The current total cross section is: {}\n\n", macro_xs().total);
   }
 }
 
@@ -642,13 +651,13 @@ void Particle::cross_surface(const Surface& surf)
   // in DAGMC, we know what the next cell should be
   if (surf.geom_type() == GeometryType::DAG) {
     int32_t i_cell = next_cell(surface_index(), cell_last(n_coord() - 1),
-                       lowest_coord().universe) -
+                       lowest_coord().universe()) -
                      1;
     // save material and temp
     material_last() = material();
     sqrtkT_last() = sqrtkT();
     // set new cell value
-    lowest_coord().cell = i_cell;
+    lowest_coord().cell() = i_cell;
     auto& cell = model::cells[i_cell];
 
     cell_instance() = 0;
@@ -752,7 +761,7 @@ void Particle::cross_reflective_bc(const Surface& surf, Direction new_u)
   u() = new_u;
 
   // Reassign particle's cell and surface
-  coord(0).cell = cell_last(0);
+  coord(0).cell() = cell_last(0);
   surface() = -surface();
 
   // If a reflective surface is coincident with a lattice or universe
@@ -899,7 +908,8 @@ void Particle::write_restart() const
     write_dataset(file_id, "type", static_cast<int>(type()));
 
     int64_t i = current_work();
-    if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
+    if (settings::run_mode == RunMode::EIGENVALUE ||
+        settings::run_mode == RunMode::ALPHA) {
       // take source data from primary bank for eigenvalue simulation
       write_dataset(file_id, "weight", simulation::source_bank[i - 1].wgt);
       write_dataset(file_id, "energy", simulation::source_bank[i - 1].E);
@@ -1016,7 +1026,7 @@ void add_surf_source_to_bank(Particle& p, const Surface& surf)
     // Check if the cell of interest has been entered
     bool entered = false;
     for (int i = 0; i < p.n_coord(); ++i) {
-      if (p.coord(i).cell == cell_idx) {
+      if (p.coord(i).cell() == cell_idx) {
         entered = true;
       }
     }

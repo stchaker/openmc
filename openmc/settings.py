@@ -356,6 +356,9 @@ class Settings:
         self._particles = None
         self._keff_trigger = None
 
+        # Alpha Eigenvalue via IFP 
+        self._alpha_ifp = None 
+
         # Energy mode subelement
         self._energy_mode = None
         self._max_order = None
@@ -440,6 +443,15 @@ class Settings:
 
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+    @property
+    def alpha_ifp(self) -> bool:
+        return self._alpha_ifp
+    
+    @alpha_ifp.setter
+    def alpha_ifp(self, alpha_ifp: bool):
+        cv.check_type('alpha_ifp', alpha_ifp, bool)
+        self._alpha_ifp = alpha_ifp 
 
     @property
     def run_mode(self) -> str:
@@ -1255,6 +1267,11 @@ class Settings:
         cv.check_less_than('source_rejection_fraction', source_rejection_fraction, 1)
         self._source_rejection_fraction = source_rejection_fraction
 
+    def _create_alpha_ifp_subelement(self, root):
+        if self._alpha_ifp is not None:
+            elem = ET.SubElement(root, "alpha_ifp")
+            elem.text = str(self._alpha_ifp)
+
     def _create_run_mode_subelement(self, root):
         elem = ET.SubElement(root, "run_mode")
         elem.text = self._run_mode.value
@@ -1738,6 +1755,13 @@ class Settings:
             self._max_write_lost_particles_from_xml_element(elem)
             self._generations_per_batch_from_xml_element(elem)
 
+    def _alpha_ifp_from_xml_element(self, root):
+        text = get_text(root, "alpha_ifp")
+        if text is not None:
+            self.alpha_ifp = bool(text)
+        else:
+            self.alpha_ifp = False 
+
     def _run_mode_from_xml_element(self, root):
         text = get_text(root, 'run_mode')
         if text is not None:
@@ -2168,6 +2192,7 @@ class Settings:
 
         self._create_run_mode_subelement(element)
         self._create_alpha_initial_subelement(element)
+        self._create_alpha_ifp_subelement(element)
         self._create_particles_subelement(element)
         self._create_batches_subelement(element)
         self._create_inactive_subelement(element)
@@ -2277,6 +2302,7 @@ class Settings:
 
         settings = cls()
         settings._eigenvalue_from_xml_element(elem)
+        settings._alpha_ifp_from_xml_element(elem)
         settings._run_mode_from_xml_element(elem)
         settings._alpha_initial_from_xml_element(elem)
         settings._particles_from_xml_element(elem)

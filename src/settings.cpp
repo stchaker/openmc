@@ -44,6 +44,7 @@ namespace settings {
 
 // Default values for boolean flags
 bool assume_separate {false};
+bool alpha_ifp {false}; 
 bool check_overlaps {false};
 bool cmfd_run {false};
 bool confidence_intervals {false};
@@ -848,12 +849,6 @@ void read_settings_xml(pugi::xml_node root)
     }
     if (check_for_node(node_sp, "mcpl")) {
       source_mcpl_write = get_node_value_bool(node_sp, "mcpl");
-
-      // Make sure MCPL support is enabled
-      if (source_mcpl_write && !MCPL_ENABLED) {
-        fatal_error(
-          "Your build of OpenMC does not support writing MCPL source files.");
-      }
     }
     if (check_for_node(node_sp, "overwrite_latest")) {
       source_latest = get_node_value_bool(node_sp, "overwrite_latest");
@@ -906,12 +901,6 @@ void read_settings_xml(pugi::xml_node root)
 
     if (check_for_node(node_ssw, "mcpl")) {
       surf_mcpl_write = get_node_value_bool(node_ssw, "mcpl");
-
-      // Make sure MCPL support is enabled
-      if (surf_mcpl_write && !MCPL_ENABLED) {
-        fatal_error("Your build of OpenMC does not support writing MCPL "
-                    "surface source files.");
-      }
     }
     // Get cell information
     if (check_for_node(node_ssw, "cell")) {
@@ -1085,6 +1074,10 @@ void read_settings_xml(pugi::xml_node root)
       fatal_error("'ifp_n_generation' must be lower than or equal to the "
                   "number of inactive cycles.");
     }
+  }
+
+  if (check_for_node(root, "alpha_ifp")) {
+    alpha_ifp = get_node_value_bool(root, "alpha_ifp"); 
   }
 
   // Check for tabular_legendre options

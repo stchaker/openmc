@@ -35,6 +35,13 @@ you wish) with OpenMC installed.
     conda create --name openmc-env openmc
     conda activate openmc-env
 
+If you are installing on macOS with an Apple silicon ARM-based processor, you
+will also need to specify the `--platform` option:
+
+.. code-block:: sh
+
+    conda create --name openmc-env --platform osx-64 openmc
+
 You are now in a conda environment called `openmc-env` that has OpenMC
 installed.
 
@@ -368,10 +375,6 @@ OPENMC_USE_DAGMC
   should also be defined as `DAGMC_ROOT` in the CMake configuration command.
   (Default: off)
 
-OPENMC_USE_MCPL
-  Turns on support for reading MCPL_ source files and writing MCPL source points
-  and surface sources. (Default: off)
-
 OPENMC_USE_LIBMESH
   Enables the use of unstructured mesh tallies with libMesh_. (Default: off)
 
@@ -379,6 +382,11 @@ OPENMC_USE_MPI
   Turns on compiling with MPI (Default: off). For further information on MPI
   options, please see the `FindMPI.cmake documentation
   <https://cmake.org/cmake/help/latest/module/FindMPI.html>`_.
+
+OPENMC_FORCE_VENDORED_LIBS
+  Forces OpenMC to use the submodules located in the vendor directory, as
+  opposed to searching the system for already installed versions of those
+  modules.
 
 To set any of these options (e.g., turning on profiling), the following form
 should be used:
