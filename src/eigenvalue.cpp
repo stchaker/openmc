@@ -25,8 +25,8 @@
 #include <algorithm> // for min
 #include <cmath>     // for sqrt, abs, pow
 #include <iterator>  // for back_inserter
-#include <limits>    //for infinity
-#include <string>
+#include <limits>    // for infinity
+#include <string>    // for string writing 
 
 namespace openmc {
 

@@ -190,10 +190,6 @@ int openmc_simulation_finalize()
   if (!simulation::initialized)
     return 0;
 
-  if (settings::alpha_ifp && settings::run_mode == RunMode::EIGENVALUE) {
-    calculate_alpha_ifp();
-  }
-
   // Stop active batch timer and start finalization timer
   simulation::time_active.stop();
   simulation::time_finalize.start();
@@ -684,6 +680,13 @@ void finalize_batch()
       (settings::trigger_on &&
         simulation::current_batch == settings::n_max_batches)) {
     settings::statepoint_batch.insert(simulation::current_batch);
+  }
+
+  // If batch is final batch, compute the alpha_ifp value
+  if(simulation::current_batch == settings::n_max_batches) {
+    if (settings::alpha_ifp && settings::run_mode == RunMode::EIGENVALUE) {
+      calculate_alpha_ifp();
+    }
   }
 
   // Write out state point if it's been specified for this batch and is not
