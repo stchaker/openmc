@@ -561,7 +561,7 @@ void read_alpha_initial()
   const std::string filename = "alpha_ifp_statepoint.h5";
   if(std::filesystem::exists(filename)) {
     hid_t file_id = file_open(filename, 'r', true);
-    read_alpha_ifp(file_id);
+    read_alpha_ifp_hdf5(file_id);
     file_close(file_id);  
   }
 

@@ -123,10 +123,11 @@ extern "C" int openmc_statepoint_write(const char* filename, bool* write_source)
     // Indicate whether source bank is stored in statepoint
     write_attribute(file_id, "source_present", write_source_);
 
-    // Write out information for eigenvalue run
-    if (settings::run_mode == RunMode::EIGENVALUE ||
-        settings::run_mode == RunMode::ALPHA) {
+    // Write out information for eigenvalue or alpha run
+    if (settings::run_mode == RunMode::EIGENVALUE) {
       write_eigenvalue_hdf5(file_id);
+    } else if (settings::run_mode == RunMode::ALPHA) {
+      write_alpha_eigenvalue_hdf5(file_id); 
     }
 
     hid_t tallies_group = create_group(file_id, "tallies");

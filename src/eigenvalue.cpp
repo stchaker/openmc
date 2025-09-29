@@ -723,6 +723,16 @@ void write_eigenvalue_hdf5(hid_t group)
   }
 }
 
+void write_alpha_eigenvalue_hdf5(hid_t group) 
+{
+  write_dataset(group, "n_inactive", settings::n_inactive); 
+  write_dataset(group, "generations_per_batch", settings::gen_per_batch); 
+  if(settings::entropy_on) {
+    write_dataset(group, "entropy", simulation::entropy); 
+  }
+  write_dataset(group, "alpha_generation", simulation::alpha_eigenvalue_tally); 
+}
+
 void read_eigenvalue_hdf5(hid_t group)
 {
   read_dataset(group, "generations_per_batch", settings::gen_per_batch);
@@ -737,7 +747,7 @@ void read_eigenvalue_hdf5(hid_t group)
   read_dataset(group, "k_abs_tra", simulation::k_abs_tra);
 }
 
-void read_alpha_ifp(hid_t group) 
+void read_alpha_ifp_hdf5(hid_t group) 
 {
   read_dataset(group, "alpha_ifp_value", settings::alpha_initial); 
 }
