@@ -88,11 +88,6 @@ int openmc_simulation_init()
     initialize_data();
   }
 
-  // If running an alpha problem, read the initial alpha eigenvalue
-  if (settings::run_mode == RunMode::ALPHA) {
-    read_alpha_initial();
-  }
-
   // Determine how much work each process should do
   calculate_work();
 
@@ -640,6 +635,11 @@ void initialize_batch()
   } else if (first_active) {
     simulation::time_inactive.stop();
     simulation::time_active.start();
+    // If running an alpha problem, read the initial alpha eigenvalue for the start of active batches
+    if (settings::run_mode == RunMode::ALPHA) {
+      read_alpha_initial();
+    }
+    // Activate tallies
     for (auto& t : model::tallies) {
       t->active_ = true;
     }
