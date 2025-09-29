@@ -67,7 +67,7 @@ extern vector<double> alpha_eigenvalue_tally; //!< tally of alpha eigenvalues
 //! Allocate space for source and fission banks
 void allocate_banks();
 
-//! Read in initial alpha eigenvalue from settings
+//! Read in initial alpha eigenvalue from settings or from alpha_ifp_statepoint
 void read_alpha_initial();
 
 //! Append alpha eigenvalues to the tally vector

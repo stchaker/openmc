@@ -79,6 +79,9 @@ void write_eigenvalue_hdf5(hid_t group);
 //! \param[in] group HDF5 group
 void read_eigenvalue_hdf5(hid_t group);
 
+//! Read data in for the alpha-eigenvalue guess 
+void read_alpha_ifp(hid_t group); 
+
 } // namespace openmc
 
 #endif // OPENMC_EIGENVALUE_H

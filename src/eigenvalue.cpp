@@ -718,6 +718,9 @@ void write_eigenvalue_hdf5(hid_t group)
   array<double, 2> k_combined;
   openmc_get_keff(k_combined.data());
   write_dataset(group, "k_combined", k_combined);
+  if (settings::alpha_ifp) {
+    write_dataset(group, "alpha_ifp_value", simulation::alpha_ifp_value);
+  }
 }
 
 void read_eigenvalue_hdf5(hid_t group)
@@ -732,6 +735,11 @@ void read_eigenvalue_hdf5(hid_t group)
   read_dataset(group, "k_col_abs", simulation::k_col_abs);
   read_dataset(group, "k_col_tra", simulation::k_col_tra);
   read_dataset(group, "k_abs_tra", simulation::k_abs_tra);
+}
+
+void read_alpha_ifp(hid_t group) 
+{
+  read_dataset(group, "alpha_ifp_value", settings::alpha_initial); 
 }
 
 } // namespace openmc

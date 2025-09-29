@@ -41,6 +41,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
 #include <iostream>
 #include <string>
 
@@ -565,7 +566,15 @@ void allocate_banks()
 
 void read_alpha_initial()
 {
-  // Read initial alpha eigenvalue from settings
+  // If an alpha_ifp_statepoint.h5 file exists from a previous k-eigenvalue run, read in that value as a guess
+  const std::string filename = "alpha_ifp_statepoint.h5";
+  if(std::filesystem::exists(filename)) {
+    hid_t file_id = file_open(filename, 'r', true);
+    read_alpha_ifp(file_id);
+    file_close(file_id);  
+  }
+
+  // Set the initial eigenvalue
   simulation::alpha_eigenvalue = settings::alpha_initial;
 }
 

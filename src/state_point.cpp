@@ -48,6 +48,11 @@ extern "C" int openmc_statepoint_write(const char* filename, bool* write_source)
     // Set filename for state point
     filename_ = fmt::format("{0}statepoint.{1:0{2}}.h5", settings::path_output,
       simulation::current_batch, w);
+
+    if(settings::alpha_ifp) {
+      filename_ = fmt::format("alpha_ifp_statepoint.h5"); 
+    }
+    
   }
 
   // If a file name was specified, ensure it has .h5 file extension
