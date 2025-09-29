@@ -406,11 +406,6 @@ void print_generation()
     fmt::print("   {:8.5f} +/-{:8.5f}", simulation::keff, simulation::keff_std);
   }
 
-
-  if(settings::run_mode == RunMode::ALPHA && n <= 1) {
-    fmt::print("                              {:8.9f}", simulation::alpha_eigenvalue/1E6);
-  }
-
   if (n > 1 && settings::run_mode == RunMode::ALPHA) {
     fmt::print("       {:8.9f}                {:8.9f},", simulation::alpha_eigenvalue/1E6, simulation::alpha_eigenvalue_average/1E6 );
   }
