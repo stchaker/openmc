@@ -32,6 +32,7 @@ extern Timer time_event_surface_crossing;
 extern Timer time_event_collision;
 extern Timer time_event_death;
 extern Timer time_update_src;
+extern Timer time_alpha_convergence; 
 
 } // namespace simulation
 
@@ -57,6 +58,9 @@ public:
 
   //! Stop the timer and reset its elapsed time
   void reset();
+
+  //! return if the timer is running
+  bool is_running(); 
 
 private:
   bool running_ {false};                 //!< is timer running?

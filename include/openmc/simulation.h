@@ -50,6 +50,7 @@ extern double total_weight;         //!< Total source weight in a batch
 extern int64_t work_per_rank;       //!< number of particles per MPI rank
 extern "C" double alpha_eigenvalue; //!< current simulation alpha eigenvalue
 extern "C" double alpha_eigenvalue_average; //!< average alpha eigenvalue
+extern "C" double correct_alpha_eigenvalue; //!< correct alpha eigenvalue to converge to - used for timing statistics
 
 extern const RegularMesh* entropy_mesh;
 extern const RegularMesh* ufs_mesh;

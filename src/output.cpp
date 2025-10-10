@@ -465,6 +465,9 @@ void print_runtime()
   show_time("Time accumulating tallies", time_tallies.elapsed(), 1);
   show_time("Time writing statepoints", time_statepoint.elapsed(), 1);
   show_time("Total time for finalization", time_finalize.elapsed());
+  if (settings::run_mode == RunMode::ALPHA){
+    show_time("Total time for alpha-eigenvalue convergence", time_alpha_convergence.elapsed()); 
+  }
   show_time("Total time elapsed", time_total.elapsed());
 
   // Calculate particle rate in active/inactive batches

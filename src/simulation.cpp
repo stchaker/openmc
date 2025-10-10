@@ -332,9 +332,10 @@ double total_weight;
 int64_t work_per_rank;
 double alpha_eigenvalue {0.0};
 double alpha_eigenvalue_average {0.0};
+double correct_alpha_eigenvalue {8.8e3}; 
 
 const RegularMesh* entropy_mesh {nullptr};
-const RegularMesh* ufs_mesh {nullptr};
+const RegularMesh* ufs_mesh {nullptr};  
 
 vector<double> k_generation;
 vector<int64_t> work_index;
@@ -565,7 +566,7 @@ void read_alpha_initial()
     file_close(file_id);  
   }
 
-  // Set the initial eigenvalue
+  // Set the initial eigenvalue to the user input value otherwise
   simulation::alpha_eigenvalue = settings::alpha_initial;
 }
 
@@ -580,11 +581,20 @@ void update_alpha_eigenvalue()
 {
   const int idx = overall_generation() - 1;
   if (simulation::alpha_eigenvalue >= 0) {
-    simulation::alpha_eigenvalue =
-      simulation::alpha_eigenvalue * simulation::k_generation[idx];
+    simulation::alpha_eigenvalue = simulation::alpha_eigenvalue * simulation::k_generation[idx];
+    if(simulation::alpha_eigenvalue > simulation::correct_alpha_eigenvalue) {
+      simulation::time_alpha_convergence.stop(); 
+    }
   } else {
-    simulation::alpha_eigenvalue =
-      simulation::alpha_eigenvalue / simulation::k_generation[idx];
+    simulation::alpha_eigenvalue = simulation::alpha_eigenvalue / simulation::k_generation[idx];
+    if(simulation::alpha_eigenvalue < simulation::correct_alpha_eigenvalue) {
+      simulation::time_alpha_convergence.stop(); 
+    }
+  }
+  if(simulation::current_batch == settings::n_batches - 1) {
+    if(simulation::time_alpha_convergence.is_running()) {
+      simulation::time_alpha_convergence.stop(); 
+    }
   }
 }
 
@@ -638,6 +648,7 @@ void initialize_batch()
     // If running an alpha problem, read the initial alpha eigenvalue for the start of active batches
     if (settings::run_mode == RunMode::ALPHA) {
       read_alpha_initial();
+      simulation::time_alpha_convergence.start();
     }
     // Activate tallies
     for (auto& t : model::tallies) {

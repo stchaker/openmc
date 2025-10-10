@@ -317,6 +317,9 @@ extern "C" int openmc_statepoint_write(const char* filename, bool* write_source)
     if (settings::run_mode == RunMode::EIGENVALUE || settings::run_mode == RunMode::ALPHA) {
       write_dataset(runtime_group, "inactive batches", time_inactive.elapsed());
     }
+    if (settings::run_mode == RunMode::ALPHA) {
+      write_dataset(runtime_group, "alpha convergence", time_alpha_convergence.elapsed());
+    }
     write_dataset(runtime_group, "active batches", time_active.elapsed());
     if (settings::run_mode == RunMode::EIGENVALUE ||
         settings::run_mode == RunMode::ALPHA) {
